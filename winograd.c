@@ -1,7 +1,10 @@
 #include <assert.h>
 #include <stdio.h>
+#include <omp.h>
 #include <stdlib.h>
 #include <string.h>
+#include <immintrin.h>
+
 
 const float G[4][3] = {
     {1.0, 0.0, 0.0}, {0.5, 0.5, 0.5}, {0.5, -0.5, 0.5}, {0.0, 0.0, 1.0}};
@@ -14,6 +17,14 @@ const float B_T[4][4] = {
 const float A[4][2] = {{1, 0}, {1, 1}, {1, -1}, {0, -1}};
 const float A_T[2][4] = {{1, 1, 1, 0}, {0, 1, -1, -1}};
 
+void dot1x1(const int K, float *A, int N,float *B, float *out, int i, int j) {
+  float p = *(out + i * N + j); 
+  for(int k = 0; k < K; k++) {
+    p += A[i * K + k] * B[k * N + j];
+  }
+  *(out + i * N + j) = p;
+}
+
 // Matrix Multiplication: Out = A x B (A:M*K, B:K*N, out: M*N)
 // All arrays should have their memory prepared correctly outside this function
 // For rookies: this sgemm is the worst sgemm I've ever written throughout my
@@ -25,10 +36,15 @@ void sgemm(const float *A, const float *B, float *out, const int M, const int K,
   for (int i = 0; i < M * N; ++i) {
     out[i] = 0.0f;
   }
-  for (int k = 0; k < K; ++k)
-    for (int j = 0; j < N; ++j)
-      for (int i = 0; i < M; ++i)
-          out[i * N + j]  += A[i * K + k] * B[k * N + j];
+  
+  //#pragma omp parallel for
+  for (int i = 0; i < M; ++i)
+    for (int j = 0; j < N; j += 4){
+      dot1x1(K, A, N, B, out, i, j);
+      dot1x1(K, A, N, B, out, i, j + 1);
+      dot1x1(K, A, N, B, out, i, j + 2);
+      dot1x1(K, A, N, B, out, i, j + 3);
+    }
 }
 
 // User API for winograd F(2,3)
