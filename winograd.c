@@ -6,6 +6,7 @@
 #include <immintrin.h>
 
 
+
 const float G[4][3] = {
     {1.0, 0.0, 0.0}, {0.5, 0.5, 0.5}, {0.5, -0.5, 0.5}, {0.0, 0.0, 1.0}};
 const float G_T[3][4] = {
@@ -25,6 +26,44 @@ void dot1x1(const int K, float *A, int N,float *B, float *out, int i, int j) {
   *(out + i * N + j) = p;
 }
 
+void avx_dot_4x4(const int K, float *A, int N, float *B, float *out, int i, int j) {
+  __m128 
+    c_00_01_02_03,
+    c_10_11_12_13,
+    c_20_21_22_23,
+    c_30_31_32_33,
+
+    b_00_01_02_03,
+
+    a_00_01_02_03,
+    a_10_11_12_13,
+    a_20_21_22_23,
+    a_30_31_32_33;
+
+    c_00_01_02_03 = _mm_setzero_ps();
+    c_10_11_12_13 = _mm_setzero_ps();
+    c_20_21_22_23 = _mm_setzero_ps();
+    c_30_31_32_33 = _mm_setzero_ps();
+
+    for(int k = 0; k<K; ++k) {
+      b_00_01_02_03 = _mm_load_ps(B + k * N + j);
+      a_00_01_02_03 = _mm_broadcast_ss(A + i * K + k);
+      a_10_11_12_13 = _mm_broadcast_ss(A + (i + 1) * K + k); 
+      a_20_21_22_23 = _mm_broadcast_ss(A + (i + 2) * K + k); 
+      a_30_31_32_33 = _mm_broadcast_ss(A + (i + 3) * K + k); 
+
+      c_00_01_02_03 += _mm_mul_ps(a_00_01_02_03, b_00_01_02_03);
+      c_10_11_12_13 += _mm_mul_ps(a_10_11_12_13, b_00_01_02_03);
+      c_20_21_22_23 += _mm_mul_ps(a_20_21_22_23, b_00_01_02_03);
+      c_30_31_32_33 += _mm_mul_ps(a_30_31_32_33, b_00_01_02_03);
+    }
+    _mm_store_ps(out + i * N + j, _mm_add_ps(_mm_load_ps(out + i * N + j), c_00_01_02_03));
+    _mm_store_ps(out + (i + 1) * N + j, _mm_add_ps(_mm_load_ps(out + (i + 1) * N + j), c_10_11_12_13));
+    _mm_store_ps(out + (i + 2) * N + j, _mm_add_ps(_mm_load_ps(out + (i + 2) * N + j), c_20_21_22_23));
+    _mm_store_ps(out + (i + 3) * N + j, _mm_add_ps(_mm_load_ps(out + (i + 3) * N + j), c_30_31_32_33));
+
+}
+
 // Matrix Multiplication: Out = A x B (A:M*K, B:K*N, out: M*N)
 // All arrays should have their memory prepared correctly outside this function
 // For rookies: this sgemm is the worst sgemm I've ever written throughout my
@@ -38,12 +77,13 @@ void sgemm(const float *A, const float *B, float *out, const int M, const int K,
   }
   
   //#pragma omp parallel for
-  for (int i = 0; i < M; ++i)
+  for (int i = 0; i < M; i += 4)
     for (int j = 0; j < N; j += 4){
-      dot1x1(K, A, N, B, out, i, j);
-      dot1x1(K, A, N, B, out, i, j + 1);
-      dot1x1(K, A, N, B, out, i, j + 2);
-      dot1x1(K, A, N, B, out, i, j + 3);
+      // dot1x1(K, A, N, B, out, i, j);
+      // dot1x1(K, A, N, B, out, i, j + 1);
+      // dot1x1(K, A, N, B, out, i, j + 2);
+      // dot1x1(K, A, N, B, out, i, j + 3);
+      avx_dot_4x4(K, A, N, B, out, i, j);
     }
 }
 

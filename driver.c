@@ -145,7 +145,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
     for (n = 0; n < batch * sizeO * K; n++)
       if (fabs((out[n] - out_ref[n]) / out_ref[n]) > 1e-4) {
         printf(
-            "Validation Failed ! winogradConv[%d] = %f || directConv[%d] = %f "
+            "Validation Failed ! winogradConv[%ld] = %f || directConv[%ld] = %f "
             "\n",
             n, out[n], n, out_ref[n]);
         break;
