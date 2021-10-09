@@ -47,6 +47,7 @@ void avx_dot_4x4(const int K, float *A, int N, float *B, float *out, int i, int 
 
     for(int k = 0; k<K; ++k) {
       b_00_01_02_03 = _mm_load_ps(B + k * N + j);
+
       a_00_01_02_03 = _mm_broadcast_ss(A + i * K + k);
       a_10_11_12_13 = _mm_broadcast_ss(A + (i + 1) * K + k); 
       a_20_21_22_23 = _mm_broadcast_ss(A + (i + 2) * K + k); 
@@ -72,17 +73,25 @@ void avx_dot_4x4(const int K, float *A, int N, float *B, float *out, int i, int 
 //      starting point.
 void sgemm(const float *A, const float *B, float *out, const int M, const int K,
            const int N) {
+  
   for (int i = 0; i < M * N; ++i) {
     out[i] = 0.0f;
   }
-  
-  //#pragma omp parallel for
-  for (int i = 0; i < M; i += 4)
+  if(M % 4!=0 || N % 4 !=0) {
+    for (int i = 0; i < M; i += 4)
+      for (int j = 0; j < N; j += 4) {
+        dot1x1(K, A, N, B, out, i, j);
+        dot1x1(K, A, N, B, out, i, j + 1);
+        dot1x1(K, A, N, B, out, i, j + 2);
+        dot1x1(K, A, N, B, out, i, j + 3);        
+      }
+    return;
+  }
+  int i;
+  omp_set_num_threads(4);
+  #pragma omp parallel for private(i)
+  for (i = 0; i < M; i += 4)
     for (int j = 0; j < N; j += 4){
-      // dot1x1(K, A, N, B, out, i, j);
-      // dot1x1(K, A, N, B, out, i, j + 1);
-      // dot1x1(K, A, N, B, out, i, j + 2);
-      // dot1x1(K, A, N, B, out, i, j + 3);
       avx_dot_4x4(K, A, N, B, out, i, j);
     }
 }
