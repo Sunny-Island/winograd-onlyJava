@@ -62,6 +62,68 @@ void avx_dot_4x4(const int K, float *A, int N, float *B, float *out, int i, int 
     _mm_store_ps(out + (i + 3) * N + j, _mm_add_ps(_mm_load_ps(out + (i + 3) * N + j), c_30_31_32_33));
 }
 
+void avx_dot_8x8(const int K, float *A, int N, float *B, float *out, int i, int j) {
+  __m256
+    c_00_01_02_03_04_05_06_07,
+    c_10_11_12_13_14_15_16_17,
+    c_20_21_22_23_24_25_26_27,
+    c_30_31_32_33_34_35_36_37,
+    c_40_41_42_43_44_45_46_47,
+    c_50_51_52_53_54_55_56_57,
+    c_60_61_62_63_64_65_66_67,
+    c_70_71_72_73_74_75_76_77,
+
+    b_00_01_02_03_04_05_06_07,
+
+    a_00_01_02_03_04_05_06_07,
+    a_10_11_12_13_14_15_16_17,
+    a_20_21_22_23_24_25_26_27,
+    a_30_31_32_33_34_35_36_37,
+    a_40_41_42_43_44_45_46_47,
+    a_50_51_52_53_54_55_56_57,
+    a_60_61_62_63_64_65_66_67,
+    a_70_71_72_73_74_75_76_77;
+
+  c_00_01_02_03_04_05_06_07 = _mm256_setzero_ps();
+  c_10_11_12_13_14_15_16_17 = _mm256_setzero_ps();
+  c_20_21_22_23_24_25_26_27 = _mm256_setzero_ps();
+  c_30_31_32_33_34_35_36_37 = _mm256_setzero_ps();
+  c_40_41_42_43_44_45_46_47 = _mm256_setzero_ps();
+  c_50_51_52_53_54_55_56_57 = _mm256_setzero_ps();
+  c_60_61_62_63_64_65_66_67 = _mm256_setzero_ps();
+  c_70_71_72_73_74_75_76_77 = _mm256_setzero_ps();
+
+    for(int k = 0; k<K; ++k) {
+      b_00_01_02_03_04_05_06_07 = _mm256_load_ps(B + k * N + j);
+
+      a_00_01_02_03_04_05_06_07 = _mm256_broadcast_ss(A + i * K + k);
+      a_10_11_12_13_14_15_16_17 = _mm256_broadcast_ss(A + (i + 1) * K + k); 
+      a_20_21_22_23_24_25_26_27 = _mm256_broadcast_ss(A + (i + 2) * K + k); 
+      a_30_31_32_33_34_35_36_37 = _mm256_broadcast_ss(A + (i + 3) * K + k);
+      a_40_41_42_43_44_45_46_47 = _mm256_broadcast_ss(A + (i + 4) * K + k);
+      a_50_51_52_53_54_55_56_57 = _mm256_broadcast_ss(A + (i + 5) * K + k);
+      a_60_61_62_63_64_65_66_67 = _mm256_broadcast_ss(A + (i + 6) * K + k);
+      a_70_71_72_73_74_75_76_77 = _mm256_broadcast_ss(A + (i + 7) * K + k); 
+
+      c_00_01_02_03_04_05_06_07 = _mm256_fmadd_ps(a_00_01_02_03_04_05_06_07, b_00_01_02_03_04_05_06_07, c_00_01_02_03_04_05_06_07);
+      c_10_11_12_13_14_15_16_17 = _mm256_fmadd_ps(a_10_11_12_13_14_15_16_17, b_00_01_02_03_04_05_06_07, c_10_11_12_13_14_15_16_17);
+      c_20_21_22_23_24_25_26_27 = _mm256_fmadd_ps(a_20_21_22_23_24_25_26_27, b_00_01_02_03_04_05_06_07, c_20_21_22_23_24_25_26_27);
+      c_30_31_32_33_34_35_36_37 = _mm256_fmadd_ps(a_30_31_32_33_34_35_36_37, b_00_01_02_03_04_05_06_07, c_30_31_32_33_34_35_36_37);
+      c_40_41_42_43_44_45_46_47 = _mm256_fmadd_ps(a_40_41_42_43_44_45_46_47, b_00_01_02_03_04_05_06_07, c_40_41_42_43_44_45_46_47);
+      c_50_51_52_53_54_55_56_57 = _mm256_fmadd_ps(a_50_51_52_53_54_55_56_57, b_00_01_02_03_04_05_06_07, c_50_51_52_53_54_55_56_57);
+      c_60_61_62_63_64_65_66_67 = _mm256_fmadd_ps(a_60_61_62_63_64_65_66_67, b_00_01_02_03_04_05_06_07, c_60_61_62_63_64_65_66_67);
+      c_70_71_72_73_74_75_76_77 = _mm256_fmadd_ps(a_70_71_72_73_74_75_76_77, b_00_01_02_03_04_05_06_07, c_70_71_72_73_74_75_76_77);
+    }
+    _mm256_store_ps(out + i * N + j, _mm256_add_ps(_mm256_load_ps(out + i * N + j), c_00_01_02_03_04_05_06_07));
+    _mm256_store_ps(out + (i + 1) * N + j, _mm256_add_ps(_mm256_load_ps(out + (i + 1) * N + j), c_10_11_12_13_14_15_16_17));
+    _mm256_store_ps(out + (i + 2) * N + j, _mm256_add_ps(_mm256_load_ps(out + (i + 2) * N + j), c_20_21_22_23_24_25_26_27));
+    _mm256_store_ps(out + (i + 3) * N + j, _mm256_add_ps(_mm256_load_ps(out + (i + 3) * N + j),   c_30_31_32_33_34_35_36_37));
+    _mm256_store_ps(out + (i + 4) * N + j, _mm256_add_ps(_mm256_load_ps(out + (i + 4) * N + j),   c_40_41_42_43_44_45_46_47));
+    _mm256_store_ps(out + (i + 5) * N + j, _mm256_add_ps(_mm256_load_ps(out + (i + 5) * N + j),   c_50_51_52_53_54_55_56_57));
+    _mm256_store_ps(out + (i + 6) * N + j, _mm256_add_ps(_mm256_load_ps(out + (i + 6) * N + j),   c_60_61_62_63_64_65_66_67));
+    _mm256_store_ps(out + (i + 7) * N + j, _mm256_add_ps(_mm256_load_ps(out + (i + 7) * N + j),   c_70_71_72_73_74_75_76_77));
+}
+
 // Matrix Multiplication: Out = A x B (A:M*K, B:K*N, out: M*N)
 // All arrays should have their memory prepared correctly outside this function
 // For rookies: this sgemm is the worst sgemm I've ever written throughout my
@@ -89,10 +151,10 @@ void sgemm_parallel(const float *A, const float *B, float *out, const int M, con
            const int N) {
   memset(out,0,M*N*sizeof(float));
   #pragma omp parallel for num_threads(24)
-  for (int i = 0; i < M; i += 4)
-    for (int j = 0; j < N; j += 4){
-      avx_dot_4x4(K, A, N, B, out, i, j);
-    }
+    for (int j = 0; j < N; j += 8)
+      for (int i = 0; i < M; i += 8)
+        avx_dot_8x8(K, A, N, B, out, i, j);
+    
 }
 
 // User API for winograd F(2,3)
