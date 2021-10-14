@@ -53,10 +53,10 @@ void avx_dot_4x4(const int K, float *A, int N, float *B, float *out, int i, int 
       a_20_21_22_23 = _mm_broadcast_ss(A + (i + 2) * K + k); 
       a_30_31_32_33 = _mm_broadcast_ss(A + (i + 3) * K + k); 
 
-      c_00_01_02_03 += _mm_mul_ps(a_00_01_02_03, b_00_01_02_03);
-      c_10_11_12_13 += _mm_mul_ps(a_10_11_12_13, b_00_01_02_03);
-      c_20_21_22_23 += _mm_mul_ps(a_20_21_22_23, b_00_01_02_03);
-      c_30_31_32_33 += _mm_mul_ps(a_30_31_32_33, b_00_01_02_03);
+      c_00_01_02_03 = _mm_fmadd_ps(a_00_01_02_03, b_00_01_02_03, c_00_01_02_03);
+      c_10_11_12_13 = _mm_fmadd_ps(a_10_11_12_13, b_00_01_02_03, c_10_11_12_13);
+      c_20_21_22_23 = _mm_fmadd_ps(a_20_21_22_23, b_00_01_02_03, c_20_21_22_23);
+      c_30_31_32_33 = _mm_fmadd_ps(a_30_31_32_33, b_00_01_02_03, c_30_31_32_33);
     }
     _mm_store_ps(out + i * N + j, _mm_add_ps(_mm_load_ps(out + i * N + j), c_00_01_02_03));
     _mm_store_ps(out + (i + 1) * N + j, _mm_add_ps(_mm_load_ps(out + (i + 1) * N + j), c_10_11_12_13));
@@ -87,10 +87,7 @@ void sgemm(const float *A, const float *B, float *out, const int M, const int K,
       }
     return;
   }
-  int i;
-  omp_set_num_threads(4);
-  #pragma omp parallel for private(i)
-  for (i = 0; i < M; i += 4)
+  for (int i = 0; i < M; i += 4)
     for (int j = 0; j < N; j += 4){
       avx_dot_4x4(K, A, N, B, out, i, j);
     }
