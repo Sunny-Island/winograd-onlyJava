@@ -65,8 +65,7 @@ void winconv_free_lib()
 
 
 void winograd_init(const int layer_num, const int Batch[], const int C[],
-                   const int H[], const int W[], const int K[], long *ISTRIDE,
-                   long *FSTRIDE, long *OSTRIDE) {
+                   const int H[], const int W[], const int K[]) {
   int tmp;
   /* Compute max stride for input, filter and output. */
   long istride, fstride, ostride;
@@ -86,9 +85,9 @@ void winograd_init(const int layer_num, const int Batch[], const int C[],
   no4k_aligned(&istride);
   no4k_aligned(&fstride);
   no4k_aligned(&ostride);
-  *ISTRIDE = istride;
-  *FSTRIDE = fstride;
-  *OSTRIDE = ostride;
+  ISTRIDE = istride;
+  FSTRIDE = fstride;
+  OSTRIDE = ostride;
 }
 
 // API. The implementation is in winograd.cpp
@@ -246,13 +245,9 @@ int main(int argc, char *argv[]) {
   double total_time;
   long total_flops;
 
-  long istride;
-  long fstride;
-  long ostride;
   winconv_init_lib();
 
-  winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr, &istride,
-                &fstride, &ostride);
+  winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr);
 
   for (int l = 0; l < layer_num; l++) {
     winograd_conv(l, validation_mode, H_arr[l], W_arr[l], C_arr[l], K_arr[l],
