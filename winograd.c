@@ -1298,8 +1298,11 @@ void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
     float *b_out;
     const int b_batchSize = 64;
 
+    printf("4 \n")
 
     filter_transform_4x3(filter, C, K, t_filter);
+
+    printf("5 \n")
 
     double elapse_time;
 
@@ -1311,12 +1314,16 @@ void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
     //OSTRIDE = batch * padTiles * K + 128;
     //gettimeofday(&begin, NULL);
     get_tiles_4x3(image, icols, irows, icols, sizeI, C, t_image, batch, padTiles, M);
+
+    printf("6 \n")
     //gettimeofday(&end, NULL);
     //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
     //cout << "get tiles time     = " << elapse_time << endl;
 
     //gettimeofday(&begin, NULL);
     batched_gemm_4x3(t_image, M * padTiles, C, t_filter, C, K, c_out, batch / M);
+
+    printf("7 \n")
     //gettimeofday(&end, NULL);
     //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
     //cout << "gemm time          = " << elapse_time << endl;
