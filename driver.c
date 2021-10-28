@@ -162,9 +162,9 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   // filter[i] = rand()%10;
 
   // Warm up
-  printf("%d",2);
+  printf("%d \n",2);
   winconv_2x3(image, irows, icols, C, filter, K, batch, out);
-  printf("%d",3);
+  printf("%d \n",3);
   if (validation_mode) {  // Verify mode. Check the result
     float *out_ref = (float *)malloc(batch * K * sizeO * sizeof(float));
     memset(out_ref, 0, batch * K * sizeO * sizeof(float));
@@ -186,7 +186,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
     if (n == batch * sizeO * K) printf("Validation Passed !\n");
     free(out_ref);
   } else {  // Benchmark mode
-    printf("%d",4);
+    printf("%d \n",4);
     double start_time = timestamp();
     for (int i = 0; i < LOOP_NUM; i++) {
       winconv_2x3(image, irows, icols, C, filter, K, batch, out);
@@ -210,19 +210,19 @@ void winograd_conv(const int layer_idx, const int validation_mode,
 }
 
 int main(int argc, char *argv[]) {
-  printf("11");
+  printf("11\n");
   if (argc < 2) {
     printf("Usage: %s layer.conf [validation=0/1] \n", argv[0]);
     // printf("Please provided layer configs. Aborting\n");
     exit(-1);
   }
-  printf("12");
+  printf("12\n");
   FILE *input = fopen(argv[1], "r");
   if (!input) {
     printf("File open failed. Aborting...\n");
     exit(-1);
   }
-  printf("13");
+  printf("13\n");
   int validation_mode = 0;  // 0 : benchmark mode, 1: validation mode
   if (argc > 2) validation_mode = atoi(argv[2]);
 
@@ -233,13 +233,13 @@ int main(int argc, char *argv[]) {
     fclose(input);
     exit(1);
   }
-  printf("14");
+  printf("14\n");
   int *C_arr = (int *)malloc(sizeof(int) * layer_num);      // Channel
   int *H_arr = (int *)malloc(sizeof(int) * layer_num);      // Image Height
   int *W_arr = (int *)malloc(sizeof(int) * layer_num);      // Image Width
   int *K_arr = (int *)malloc(sizeof(int) * layer_num);      // Filters
   int *Batch_arr = (int *)malloc(sizeof(int) * layer_num);  // Batch
-  printf("15");
+  printf("15\n");
 
   for (int l = 0; l < layer_num; ++l) {
     fscanf(input, "%d%d%d%d%d", &C_arr[l], &H_arr[l], &W_arr[l], &K_arr[l],
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
   }
   fclose(input);
 
-  printf("16");
+  printf("16\n");
 
   // srand(time(NULL));
   srand(20210930);
@@ -255,13 +255,13 @@ int main(int argc, char *argv[]) {
   double total_time;
   long total_flops;
 
-  printf("0");
+  printf("0\n");
 
   winconv_init_lib();
 
   winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr);
 
-  printf("%d",1);
+  printf("%d \n",1);
 
   for (int l = 0; l < layer_num; l++) {
     winograd_conv(l, validation_mode, H_arr[l], W_arr[l], C_arr[l], K_arr[l],
