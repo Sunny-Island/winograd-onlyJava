@@ -28,6 +28,7 @@
 
 #define F2X3				2
 
+const long MAX_TILES = (MAX_IROWS-2)*(MAX_IROWS-2)*0.25; 
 #if 1
 long ISTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
 long FSTRIDE = (MAX_FILTER_CHANNELS+1)*(MAX_FILTERS+1); 
@@ -75,9 +76,7 @@ void winograd_init(const int layer_num, const int Batch[], const int C[],
 // API. The implementation is in winograd.cpp
 void winconv_2x3(float *__restrict__ image, const int irows, const int icols,
                  const int C, float *__restrict__ filter, const int K,
-                 const int batch, float *__restrict__ out,
-                 float *__restrict__ U, float *__restrict__ V,
-                 float *__restrict__ M);
+                 const int batch, float *__restrict__ out);
 
 int naive_conv(float *in, float *kn, float *out, const int N, const int C,
                const int H, const int W, const int K) {

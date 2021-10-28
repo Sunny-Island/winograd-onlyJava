@@ -7,7 +7,6 @@
 #include <immintrin.h>
 #include <mkl.h>
 
-#include <winconv.hpp>
 #include <sys/time.h>
 
 static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
@@ -1330,66 +1329,3 @@ void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
     //ISTRIDE = temp1;
     //OSTRIDE = temp2;
 }
-/*
-int main() {
-	cout<<"start"<<endl;	
-    float *dataSrc = (float*) _mm_malloc(6 * 66 * sizeof(float), 64);
-    float *dataDst = (float*) _mm_malloc(36 * 16 * sizeof(float), 64);
-    int counter = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j < 66; ++j) {
-            dataSrc[i * 66 + j] = i * 66 + j;
-        }
-    }
-    cout<<"get tiles"<<endl;
-    get_tiles_4x3_1t(0, 0, 66, dataSrc, dataDst, &counter);
-    for (int i = 0; i < 36; ++i) {
-        cout << dataDst[i * ISTRIDE] << endl;
-    }
-
-    float *filterSrc = (float*) _mm_malloc(9 * sizeof(float), 64);
-    float *filterDst = (float*) _mm_malloc(36 * sizeof(float), 64);
-    for (int i = 0; i < 9; ++i) {
-        filterSrc[i] = i + 1;
-    }
-    filter_transform_4x3(filterSrc, 1, 1, filterDst);
-
-    float *out = (float*) _mm_malloc(36 * 16 * sizeof(float), 64);
-    float *outDst = (float*) _mm_malloc(4 * 64 * sizeof(float), 64);
-
-    int t, i;
-    const char trans = 'n';
-    const float alpha = 1.0;
-    const float beta = 0.0;
-
-    int irows = 16;
-    int frows = 1;
-    int fcols = 1;
-    int icols = 1;
-    const int ldi = irows;
-    const int ldf = frows;
-    const int ldo = irows;
-
-    for (i = 0; i < 36; ++i) {
-        const float* im = dataDst + i * ISTRIDE;
-        const float* fi = filterDst + i * FSTRIDE;
-        float *ot = out + i * OSTRIDE;
-
-        sgemm(&trans, &trans, &irows, &fcols, &icols, &alpha, im,
-              &ldi, fi, &ldf, &beta, ot, &ldo);
-    }
-
-    int tile_offset = 0;
-    out_transform_4x3_16t(0, 0, ldo, out, outDst, &tile_offset);
-
-    cout << outDst[0] << ' ' << outDst[1] << ' ' << outDst[16] << endl;
-
-    _mm_free(out);
-    _mm_free(outDst);
-    _mm_free(filterSrc);
-    _mm_free(filterDst);
-    _mm_free(dataSrc);
-    _mm_free(dataDst);
-    return 0;
-}
-*/
