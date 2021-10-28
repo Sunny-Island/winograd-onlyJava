@@ -1301,7 +1301,6 @@ void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
 
     filter_transform_4x3(filter, C, K, t_filter);
 
-    timeval begin, end;
     double elapse_time;
 
     int temp1 = ISTRIDE;

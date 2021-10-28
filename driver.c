@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
   long istride;
   long fstride;
   long ostride;
-  winconv_init_lib()
+  winconv_init_lib();
 
   winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr, &istride,
                 &fstride, &ostride);
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
     printf("Total elapse time: %lf. ( %7.2lf GFlops) \n", total_time,
            (double)total_flops * 1.0e-9 / total_time);
 
-  winconv_free_lib()
+  winconv_free_lib();
 
   if (C_arr) free(C_arr);
   if (H_arr) free(H_arr);
