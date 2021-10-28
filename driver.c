@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 
   winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr);
 
-  printf(1)
+  printf(1);
 
   for (int l = 0; l < layer_num; l++) {
     winograd_conv(l, validation_mode, H_arr[l], W_arr[l], C_arr[l], K_arr[l],
