@@ -248,6 +248,8 @@ int main(int argc, char *argv[]) {
   double total_time;
   long total_flops;
 
+  printf("%d",0);
+
   winconv_init_lib();
 
   winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr);
