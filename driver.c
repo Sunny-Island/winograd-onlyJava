@@ -210,16 +210,19 @@ void winograd_conv(const int layer_idx, const int validation_mode,
 }
 
 int main(int argc, char *argv[]) {
+  printf("%d",11);
   if (argc < 2) {
     printf("Usage: %s layer.conf [validation=0/1] \n", argv[0]);
     // printf("Please provided layer configs. Aborting\n");
     exit(-1);
   }
+  printf("%d",12);
   FILE *input = fopen(argv[1], "r");
   if (!input) {
     printf("File open failed. Aborting...\n");
     exit(-1);
   }
+  printf("%d",13);
   int validation_mode = 0;  // 0 : benchmark mode, 1: validation mode
   if (argc > 2) validation_mode = atoi(argv[2]);
 
@@ -230,17 +233,21 @@ int main(int argc, char *argv[]) {
     fclose(input);
     exit(1);
   }
+  printf("%d",14);
   int *C_arr = (int *)malloc(sizeof(int) * layer_num);      // Channel
   int *H_arr = (int *)malloc(sizeof(int) * layer_num);      // Image Height
   int *W_arr = (int *)malloc(sizeof(int) * layer_num);      // Image Width
   int *K_arr = (int *)malloc(sizeof(int) * layer_num);      // Filters
   int *Batch_arr = (int *)malloc(sizeof(int) * layer_num);  // Batch
+  printf("%d",15);
 
   for (int l = 0; l < layer_num; ++l) {
     fscanf(input, "%d%d%d%d%d", &C_arr[l], &H_arr[l], &W_arr[l], &K_arr[l],
            &Batch_arr[l]);
   }
   fclose(input);
+
+  printf("%d",16);
 
   // srand(time(NULL));
   srand(20210930);
