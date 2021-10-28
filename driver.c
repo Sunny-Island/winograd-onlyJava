@@ -165,7 +165,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   // Warm up
   winconv_2x3(image, irows, icols, C, filter, K, batch, out);
   if (validation_mode) {  // Verify mode. Check the result
-    float *out_ref = (float *)mkl_malloc(batch * K * sizeO * sizeof(float));
+    float *out_ref = (float *)mkl_malloc(64, batch * K * sizeO * sizeof(float));
     memset(out_ref, 0, batch * K * sizeO * sizeof(float));
 
     naive_conv(image, filter, out_ref, batch, C, irows, icols, K);
