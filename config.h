@@ -1,0 +1,19 @@
+
+
+#define MAX_BATCH           128
+#define MAX_IMAGE_CHANNELS  64
+#define MAX_IROWS           1024
+#define MAX_FILTER_CHANNELS 512
+#define MAX_FILTERS         2048
+
+#define BATCH_TOGETHER		0
+#define BATCH_BLOCK			1
+
+#define F2X3				2
+
+const long MAX_TILES = (MAX_IROWS-2)*(MAX_IROWS-2)*0.25; 
+#if 1
+long ISTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
+long FSTRIDE = (MAX_FILTER_CHANNELS+1)*(MAX_FILTERS+1); 
+long OSTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
+#endif

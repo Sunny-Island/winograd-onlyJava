@@ -8,6 +8,7 @@
 #include <mkl.h>
 
 #include <sys/time.h>
+#include "config.h"
 
 static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
                               float *dataDst, int *counter)
