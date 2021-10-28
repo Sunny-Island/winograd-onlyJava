@@ -12,8 +12,15 @@
 #define F2X3				2
 
 const long MAX_TILES = (MAX_IROWS-2)*(MAX_IROWS-2)*0.25; 
-#if 1
+#if 0
 long ISTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
 long FSTRIDE = (MAX_FILTER_CHANNELS+1)*(MAX_FILTERS+1); 
 long OSTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
+#else
+extern long ISTRIDE; 
+extern long FSTRIDE;
+extern long OSTRIDE;
 #endif
+extern float* t_filter;    
+extern float* t_image;    
+extern float* c_out;    

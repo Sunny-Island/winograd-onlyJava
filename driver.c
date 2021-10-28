@@ -12,6 +12,15 @@
 
 #include "config.h"
 
+float* t_filter;    
+float* t_image;    
+float* c_out;  
+
+#if 1
+long ISTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
+long FSTRIDE = (MAX_FILTER_CHANNELS+1)*(MAX_FILTERS+1); 
+long OSTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
+#endif
 
 #ifdef __DEBUG
 #define inline
@@ -28,6 +37,31 @@ inline void no4k_aligned(long *num) {
   long flag = *num;
   if (flag % 4096 == 0) (*num) += 128;
 }
+
+// setup scratch memory used in the algorithm 
+void winconv_init_lib()
+{
+    int ret;
+
+    t_filter = (float *)mkl_malloc(36*FSTRIDE*sizeof(float), 64);
+    //std::cout << 36 * FSTRIDE * sizeof(float) << std::endl;
+    assert(t_filter != NULL); 
+    t_image = (float *)mkl_malloc(36*ISTRIDE*sizeof(float), 64);
+    //std::cout << 36 * ISTRIDE * sizeof(float) << std::endl;
+    assert(t_image != NULL); 
+    c_out = (float *)mkl_malloc(36*OSTRIDE*sizeof(float), 64);
+    //std::cout << 36 * OSTRIDE * sizeof(float) << std::endl;
+    assert(c_out != NULL); 
+}
+
+// free up 
+void winconv_free_lib()
+{
+    mkl_free(t_filter);    
+    mkl_free(t_image);    
+    mkl_free(c_out);    
+}
+
 
 void winograd_init(const int layer_num, const int Batch[], const int C[],
                    const int H[], const int W[], const int K[], long *ISTRIDE,
@@ -119,7 +153,6 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   assert(filter != NULL);
   out = (float *)mkl_malloc(64, batch * K * sizeO * sizeof(float));
   assert(out != NULL);
-  float *U, *V, *M;
 
 #pragma omp parallel for private(i)
   for (long i = 0; i < batch * C * sizeI; i++) image[i] = (float)(i % 10 + 1);
@@ -215,6 +248,7 @@ int main(int argc, char *argv[]) {
   long istride;
   long fstride;
   long ostride;
+  winconv_init_lib()
 
   winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr, &istride,
                 &fstride, &ostride);
@@ -227,6 +261,8 @@ int main(int argc, char *argv[]) {
   if (!validation_mode)
     printf("Total elapse time: %lf. ( %7.2lf GFlops) \n", total_time,
            (double)total_flops * 1.0e-9 / total_time);
+
+  winconv_free_lib()
 
   if (C_arr) free(C_arr);
   if (H_arr) free(H_arr);
