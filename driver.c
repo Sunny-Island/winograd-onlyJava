@@ -162,7 +162,9 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   // filter[i] = rand()%10;
 
   // Warm up
+  printf(2);
   winconv_2x3(image, irows, icols, C, filter, K, batch, out);
+  printf(3);
   if (validation_mode) {  // Verify mode. Check the result
     float *out_ref = (float *)malloc(batch * K * sizeO * sizeof(float));
     memset(out_ref, 0, batch * K * sizeO * sizeof(float));
@@ -184,6 +186,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
     if (n == batch * sizeO * K) printf("Validation Passed !\n");
     free(out_ref);
   } else {  // Benchmark mode
+    printf(4);
     double start_time = timestamp();
     for (int i = 0; i < LOOP_NUM; i++) {
       winconv_2x3(image, irows, icols, C, filter, K, batch, out);
@@ -248,6 +251,8 @@ int main(int argc, char *argv[]) {
   winconv_init_lib();
 
   winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr);
+
+  printf(1)
 
   for (int l = 0; l < layer_num; l++) {
     winograd_conv(l, validation_mode, H_arr[l], W_arr[l], C_arr[l], K_arr[l],
