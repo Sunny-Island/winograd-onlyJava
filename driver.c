@@ -147,13 +147,12 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   int ret;
 
   float *image, *filter, *out;
-  image = (float *)mkl_malloc(64, batch * C * sizeI * sizeof(float));
+  image = (float *)mkl_malloc(batch * C * sizeI * sizeof(float), 64);
   assert(image != NULL);
-  filter = (float *)mkl_malloc(64, K * C * sizeF * sizeof(float));
+  filter = (float *)mkl_malloc(K * C * sizeF * sizeof(float), 64);
   assert(filter != NULL);
-  out = (float *)mkl_malloc(64, batch * K * sizeO * sizeof(float));
+  out = (float *)mkl_malloc(batch * K * sizeO * sizeof(float), 64);
   assert(out != NULL);
-
 #pragma omp parallel for private(i)
   for (long i = 0; i < batch * C * sizeI; i++) image[i] = (float)(i % 10 + 1);
     // image[i] = rand()%10;
@@ -162,9 +161,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   // filter[i] = rand()%10;
 
   // Warm up
-  printf("%d \n",2);
   winconv_2x3(image, irows, icols, C, filter, K, batch, out);
-  printf("%d \n",3);
   if (validation_mode) {  // Verify mode. Check the result
     float *out_ref = (float *)malloc(batch * K * sizeO * sizeof(float));
     memset(out_ref, 0, batch * K * sizeO * sizeof(float));
@@ -186,7 +183,6 @@ void winograd_conv(const int layer_idx, const int validation_mode,
     if (n == batch * sizeO * K) printf("Validation Passed !\n");
     free(out_ref);
   } else {  // Benchmark mode
-    printf("%d /n",4);
     double start_time = timestamp();
     for (int i = 0; i < LOOP_NUM; i++) {
       winconv_2x3(image, irows, icols, C, filter, K, batch, out);
