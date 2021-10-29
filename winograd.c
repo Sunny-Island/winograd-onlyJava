@@ -494,7 +494,7 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     bufE = _mm512_add_ps(bufE, bufTemp[28]);
     _mm512_storeu_ps(dataDst + 27 * ISTRIDE + coter, bufE);
 
-    bufF = _mm512_mul_ps(m2, bufTemp[25]);
+    bufF = _mm512_mul_ps(m2, bufTemp[25]);//should be 25
     bufF = _mm512_sub_ps(bufF, bufTemp[26]);
     bufF = _mm512_fnmadd_ps(m2, bufTemp[27], bufF);
     bufF = _mm512_add_ps(bufF, bufTemp[28]);
