@@ -557,11 +557,7 @@ static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, co
         for (; j < 66; ++j) {
             temp[i * 66 + j] = 0;
         }
-        //memset(temp + i * 66 + j, 1, (66 - j) * sizeof(float));
     }
-    /*if (i < 6) {
-        memset(temp + i * 66, 0, 66 * (6 - i) * sizeof(float));
-    }*/
     for (; i < 6; ++i) {
         for (j = 0; j < 66; ++j) {
             temp[i * 66 + j] = 0;
@@ -697,8 +693,8 @@ static void filter_transform_4x3(const float* __restrict__ filter, const int C, 
     const float r12 = 1.0 / 12;
     const float r24 = 1.0 / 24;
 
-#pragma omp parallel for collapse(2) private(m, n, x, F)
-#pragma simd
+    #pragma omp parallel for collapse(2) private(m, n, x, F)
+    #pragma simd
     for (m = 0; m < K; ++m) {
         for (n = 0; n < C; ++n) {
             float c1[18] __attribute__((aligned(64)));
@@ -765,7 +761,7 @@ static void filter_transform_4x3(const float* __restrict__ filter, const int C, 
             c2[34] = r24 * c1[15] - r12 * c1[16] + r6 * c1[17];
             c2[35] = c1[17];
 
-#pragma unroll(9)
+            #pragma unroll(9)
             for (x = 0; x < 36; ++x) {
                 out[x * FSTRIDE + m * C + n] = c2[x];
             }
@@ -1069,12 +1065,6 @@ static inline void pad_out_transform(int x, int y, int lenX, int lenY, int nrows
         return;
     }
     out_transform_4x3_16t(0, 0, 64, dataSrc, temp, counter);
-    /*for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 64; ++j) {
-            cout << temp[i * 64 + j] << ' ';
-        }
-        cout << endl;
-    }*/
     for (int i = 0; i < lenX; ++i) {
         for (int j = 0; j < lenY; ++j) {
             dataDst[(x + i) * nrows + y + j] = temp[i * 64 + j];
@@ -1176,7 +1166,6 @@ static void get_tiles_4x3(const float* __restrict__ image, const int ldi, const 
     int fullOutHeight = outHeight / 4 * 4;
     int fullOutWidth = outWidth / 64 * 64;
    
-    //cout << "get tiles " << ntiles << ' ' << N * C << endl;
     #pragma omp parallel for 
     for (int t = 0; t < N * C; ++t) {
         int i, j;
@@ -1201,24 +1190,6 @@ static void get_tiles_4x3(const float* __restrict__ image, const int ldi, const 
         }
         pad_get_tiles(i, j, outHeight - fullOutHeight + 2, outWidth - fullOutWidth + 2, ldi, data, temp, otile, &tile_count);
     }
-
-    /*for (int i = 0; i < 36; ++i) {
-        for (int j = 0; j < 32; ++j) {
-            cout << otile[i * ISTRIDE + j] << ' ';
-        }
-        cout << endl;
-    }*/
-        /*        for (i = 0; i < irows - 4; i += 4) {
-            for (j = 0; j < num16t; j += 64) {
-                get_tiles_4x3_16t(i, j, ldi, data, otile, &tile_count);
-            }
-#pragma simd
-            for (; j < (icols - 4); j += 4) {
-                get_tiles_4x3_1t(i, j, ldi, data, otile, &tile_count);
-            }
-
-            }*/
-
 }
 
 static void batched_gemm_4x3(const float* image, const int irows, const int icols, const float* filter, const int frows, const int fcols, float* __restrict__ out, const int batch) {
@@ -1230,8 +1201,7 @@ static void batched_gemm_4x3(const float* image, const int irows, const int icol
     const int ldf = frows;
     const int ldo = irows;
 
-    //cout << "batched_gemm " << 36 * batch << ' ' << ISTRIDE << ' ' << OSTRIDE << ' ' << irows << ' ' << fcols << ' ' << icols << endl;
-#pragma omp parallel for collapse(2) private(t, i)
+    #pragma omp parallel for collapse(2) private(t, i)
     for (i = 0; i < 36; ++i) {
         for (t = 0; t < batch; ++t) {
             const float* im = image + i * ISTRIDE + t * irows * icols;
@@ -1241,13 +1211,6 @@ static void batched_gemm_4x3(const float* image, const int irows, const int icol
             sgemm(&trans, &trans, &irows, &fcols, &icols, &alpha, im, &ldi, fi, &ldf, &beta, ot, &ldo);
         }
     }
-
-    /*for (int i = 0; i < 36; ++i) {
-        for (int j = 0; j < 16; ++j) {
-            cout << out[i * OSTRIDE + j] << ' ';
-        }
-        cout << endl;
-    }*/
 }
 
 static void out_transform_4x3(const float* __restrict__ d, const int K, const int ntiles, float* __restrict__ out, const int ldo, const int oH, const int oW, const int N, const int M) {
@@ -1256,8 +1219,7 @@ static void out_transform_4x3(const float* __restrict__ d, const int K, const in
     const int OHP = oH / 4 * 4;
     const int OWP = oW / 4 * 4;
 
-    //cout << "out transform " << N * K << endl;
-#pragma omp parallel for private(t)
+    #pragma omp parallel for private(t)
     for (t = 0; t < N * K; ++t) {
         int i, j;
 
@@ -1280,11 +1242,6 @@ static void out_transform_4x3(const float* __restrict__ d, const int K, const in
         }
         pad_out_transform(i, j, oH - i, oW - j, ldo, d, temp, data, &tile_offset);
     }
-            /*            #pragma simd
-            for (; j < OWP; j += 4) {
-                out_transform_4x3_1t(i, j, ldo, d, data, &tile_offset);
-                }*/
-
 }
 
 void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
@@ -1298,41 +1255,15 @@ void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
     const int padHeight = (outHeight + 3) / 4 * 4;
     const int padWidth = (outWidth + 63) / 64 * 64;
     const int padTiles = padHeight / 4 * padWidth / 4;
-    float *b_image;
-    float *b_out;
     const int b_batchSize = 64;
 
+    int merge = 1;
 
     filter_transform_4x3(filter, C, K, U);
 
-
-    double elapse_time;
-
-    int temp1 = ISTRIDE;
-    int temp2 = OSTRIDE;
-    int merge = 1;
-
-    //ISTRIDE = batch * padTiles * C + 128;
-    //OSTRIDE = batch * padTiles * K + 128;
-    //gettimeofday(&begin, NULL);
     get_tiles_4x3(image, icols, irows, icols, sizeI, C, V, batch, padTiles, merge);
 
-    //gettimeofday(&end, NULL);
-    //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
-    //cout << "get tiles time     = " << elapse_time << endl;
-
-    //gettimeofday(&begin, NULL);
     batched_gemm_4x3(V, merge * padTiles, C, U, C, K, M, batch / merge);
 
-    //gettimeofday(&end, NULL);
-    //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
-    //cout << "gemm time          = " << elapse_time << endl;
-
-    //gettimeofday(&begin, NULL);
     out_transform_4x3(M, K, padTiles, out, outWidth, outHeight, outWidth, batch, merge);
-    //gettimeofday(&end, NULL);
-    //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
-    //cout << "out_transform time = " << elapse_time << endl << endl;
-    //ISTRIDE = temp1;
-    //OSTRIDE = temp2;
 }

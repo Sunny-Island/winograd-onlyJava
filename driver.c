@@ -17,17 +17,10 @@
 #define MAX_FILTER_CHANNELS 512
 #define MAX_FILTERS         2048
 
-#define BATCH_TOGETHER		0
-#define BATCH_BLOCK			1
-
-#define F2X3				2
-
-#if 1
 const long MAX_TILES = (MAX_IROWS-2)*(MAX_IROWS-2)*0.25; 
 long ISTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
 long FSTRIDE = (MAX_FILTER_CHANNELS+1)*(MAX_FILTERS+1); 
 long OSTRIDE = (MAX_BATCH)*(MAX_IMAGE_CHANNELS+18)*(MAX_TILES+13); 
-#endif
 
 #ifdef __DEBUG
 #define inline
@@ -126,9 +119,6 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   const int sizeI = irows * icols;
   const int sizeF = 3 * 3;
   const int sizeO = outHeight * outWidth;
-  const int P = batch * outHeight / 2 * outWidth / 2;
-
-  int ret;
 
   float *image, *filter, *out;
   image = (float *)mkl_malloc(batch * C * sizeI * sizeof(float), 64);
