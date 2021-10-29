@@ -7,14 +7,20 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+
 #include <mkl.h>
-#include <omp.h>
+#include "omp.h"
 
-#include "config.h"
+#define MAX_BATCH           128
+#define MAX_IMAGE_CHANNELS  64
+#define MAX_IROWS           1024
+#define MAX_FILTER_CHANNELS 512
+#define MAX_FILTERS         2048
 
-float* t_filter;    
-float* t_image;    
-float* c_out;  
+#define BATCH_TOGETHER		0
+#define BATCH_BLOCK			1
+
+#define F2X3				2
 
 #if 1
 const long MAX_TILES = (MAX_IROWS-2)*(MAX_IROWS-2)*0.25; 
@@ -39,61 +45,39 @@ inline void no4k_aligned(long *num) {
   if (flag % 4096 == 0) (*num) += 128;
 }
 
-// setup scratch memory used in the algorithm 
-void winconv_init_lib()
-{
-    int ret;
-
-    t_filter = (float *)mkl_malloc(36*FSTRIDE*sizeof(float), 64);
-    //std::cout << 36 * FSTRIDE * sizeof(float) << std::endl;
-    assert(t_filter != NULL); 
-    t_image = (float *)mkl_malloc(36*ISTRIDE*sizeof(float), 64);
-    //std::cout << 36 * ISTRIDE * sizeof(float) << std::endl;
-    assert(t_image != NULL); 
-    c_out = (float *)mkl_malloc(36*OSTRIDE*sizeof(float), 64);
-    //std::cout << 36 * OSTRIDE * sizeof(float) << std::endl;
-    assert(c_out != NULL); 
-}
-
-// free up 
-void winconv_free_lib()
-{
-    mkl_free(t_filter);    
-    mkl_free(t_image);    
-    mkl_free(c_out);    
-}
-
-
 void winograd_init(const int layer_num, const int Batch[], const int C[],
-                   const int H[], const int W[], const int K[]) {
+                   const int H[], const int W[], const int K[], long *ISTRIDE,
+                   long *FSTRIDE, long *OSTRIDE) {
   int tmp;
   /* Compute max stride for input, filter and output. */
   long istride, fstride, ostride;
   istride = fstride = ostride = 0;
 
   for (int i = 0; i < layer_num; i++) {
-    tmp = Batch[i] * (H[i] + 1) / 4 * (W[i] + 1) / 4 * C[i];
+    tmp = Batch[i] * (H[i] - 2) / 2 * (W[i] - 2) / 2 * C[i];
     if (tmp > istride) istride = tmp;
 
     tmp = C[i] * K[i];
     if (tmp > fstride) fstride = tmp;
 
-    tmp = Batch[i] * (H[i] + 1) / 4 * (W[i] + 1) / 4 * K[i];
+    tmp = Batch[i] * (H[i] - 2) / 2 * (W[i] - 2) / 2 * K[i];
     if (tmp > ostride) ostride = tmp;
   }
 
   no4k_aligned(&istride);
   no4k_aligned(&fstride);
   no4k_aligned(&ostride);
-  ISTRIDE = istride;
-  FSTRIDE = fstride;
-  OSTRIDE = ostride;
+  *ISTRIDE = istride;
+  *FSTRIDE = fstride;
+  *OSTRIDE = ostride;
 }
 
 // API. The implementation is in winograd.cpp
 void winconv_2x3(float *__restrict__ image, const int irows, const int icols,
                  const int C, float *__restrict__ filter, const int K,
-                 const int batch, float *__restrict__ out);
+                 const int batch, float *__restrict__ out,
+                 float *__restrict__ U, float *__restrict__ V,
+                 float *__restrict__ M);
 
 int naive_conv(float *in, float *kn, float *out, const int N, const int C,
                const int H, const int W, const int K) {
@@ -153,6 +137,15 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   assert(filter != NULL);
   out = (float *)mkl_malloc(batch * K * sizeO * sizeof(float), 64);
   assert(out != NULL);
+
+  float *U, *V, *M;
+  U = (float *)mkl_malloc(sizeof(float) * 6 * 6 * FSTRIDE, 64);
+  assert(U != NULL);
+  V = (float *)mkl_malloc(sizeof(float) * 6 * 6 * ISTRIDE, 64);
+  assert(V != NULL);
+  M = (float *)mkl_malloc(sizeof(float) * 6 * 6 * OSTRIDE, 64);
+  assert(M != NULL);
+
 #pragma omp parallel for private(i)
   for (long i = 0; i < batch * C * sizeI; i++) image[i] = (float)(i % 10 + 1);
     // image[i] = rand()%10;
@@ -161,7 +154,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   // filter[i] = rand()%10;
 
   // Warm up
-  winconv_2x3(image, irows, icols, C, filter, K, batch, out);
+  winconv_2x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
   if (validation_mode) {  // Verify mode. Check the result
     float *out_ref = (float *)malloc(batch * K * sizeO * sizeof(float));
     memset(out_ref, 0, batch * K * sizeO * sizeof(float));
@@ -185,7 +178,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   } else {  // Benchmark mode
     double start_time = timestamp();
     for (int i = 0; i < LOOP_NUM; i++) {
-      winconv_2x3(image, irows, icols, C, filter, K, batch, out);
+      winconv_2x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
     }
     double end_time = timestamp();
 
@@ -203,6 +196,9 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   mkl_free(image);
   mkl_free(filter);
   mkl_free(out);
+  mkl_free(U);
+  mkl_free(V);
+  mkl_free(M);
 }
 
 int main(int argc, char *argv[]) {
@@ -244,10 +240,7 @@ int main(int argc, char *argv[]) {
   double total_time;
   long total_flops;
 
-  winconv_init_lib();
-
   //winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr);
-
 
   for (int l = 0; l < layer_num; l++) {
     winograd_conv(l, validation_mode, H_arr[l], W_arr[l], C_arr[l], K_arr[l],
@@ -257,8 +250,6 @@ int main(int argc, char *argv[]) {
   if (!validation_mode)
     printf("Total elapse time: %lf. ( %7.2lf GFlops) \n", total_time,
            (double)total_flops * 1.0e-9 / total_time);
-
-  winconv_free_lib();
 
   if (C_arr) free(C_arr);
   if (H_arr) free(H_arr);

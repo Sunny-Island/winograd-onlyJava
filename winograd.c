@@ -8,7 +8,10 @@
 #include <mkl.h>
 
 #include <sys/time.h>
-#include "config.h"
+
+extern long ISTRIDE; 
+extern long FSTRIDE;
+extern long OSTRIDE;
 
 static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
                               float *dataDst, int *counter)
@@ -1286,7 +1289,8 @@ static void out_transform_4x3(const float* __restrict__ d, const int K, const in
 
 void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
                  const int C, float* __restrict__ filter, const int K, const int batch,
-                 float* __restrict__ out) {
+                 float* __restrict__ out, float *__restrict__ U, float *__restrict__ V,
+                 float *__restrict__ M) {
     const int outHeight = irows - 2;
     const int outWidth = icols - 2;
     const int sizeI = irows * icols;
@@ -1299,33 +1303,33 @@ void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
     const int b_batchSize = 64;
 
 
-    filter_transform_4x3(filter, C, K, t_filter);
+    filter_transform_4x3(filter, C, K, U);
 
 
     double elapse_time;
 
     int temp1 = ISTRIDE;
     int temp2 = OSTRIDE;
-    int M = 1;
+    int merge = 1;
 
     //ISTRIDE = batch * padTiles * C + 128;
     //OSTRIDE = batch * padTiles * K + 128;
     //gettimeofday(&begin, NULL);
-    get_tiles_4x3(image, icols, irows, icols, sizeI, C, t_image, batch, padTiles, M);
+    get_tiles_4x3(image, icols, irows, icols, sizeI, C, V, batch, padTiles, merge);
 
     //gettimeofday(&end, NULL);
     //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
     //cout << "get tiles time     = " << elapse_time << endl;
 
     //gettimeofday(&begin, NULL);
-    batched_gemm_4x3(t_image, M * padTiles, C, t_filter, C, K, c_out, batch / M);
+    batched_gemm_4x3(V, merge * padTiles, C, U, C, K, M, batch / merge);
 
     //gettimeofday(&end, NULL);
     //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
     //cout << "gemm time          = " << elapse_time << endl;
 
     //gettimeofday(&begin, NULL);
-    out_transform_4x3(c_out, K, padTiles, out, outWidth, outHeight, outWidth, batch, M);
+    out_transform_4x3(M, K, padTiles, out, outWidth, outHeight, outWidth, batch, merge);
     //gettimeofday(&end, NULL);
     //elapse_time = (end.tv_sec - begin.tv_sec) * 1e3 + (end.tv_usec - begin.tv_usec) * 1e-3;
     //cout << "out_transform time = " << elapse_time << endl << endl;
