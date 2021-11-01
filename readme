@@ -1,2 +1,0 @@
-Benchmark mode: ./winograd small.conf 0
-Validation mode: ./winograd small.conf 1
