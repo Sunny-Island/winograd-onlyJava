@@ -1244,7 +1244,7 @@ static void out_transform_4x3(const float* __restrict__ d, const int K, const in
     }
 }
 
-void winconv_2x3(float* __restrict__ image, const int irows, const int icols,
+void winconv_4x3(float* __restrict__ image, const int irows, const int icols,
                  const int C, float* __restrict__ filter, const int K, const int batch,
                  float* __restrict__ out, float *__restrict__ U, float *__restrict__ V,
                  float *__restrict__ M) {

@@ -66,7 +66,7 @@ void winograd_init(const int layer_num, const int Batch[], const int C[],
 }
 
 // API. The implementation is in winograd.cpp
-void winconv_2x3(float *__restrict__ image, const int irows, const int icols,
+void winconv_4x3(float *__restrict__ image, const int irows, const int icols,
                  const int C, float *__restrict__ filter, const int K,
                  const int batch, float *__restrict__ out,
                  float *__restrict__ U, float *__restrict__ V,
@@ -144,7 +144,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   // filter[i] = rand()%10;
 
   // Warm up
-  winconv_2x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
+  winconv_4x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
   if (validation_mode) {  // Verify mode. Check the result
     float *out_ref = (float *)malloc(batch * K * sizeO * sizeof(float));
     memset(out_ref, 0, batch * K * sizeO * sizeof(float));
@@ -168,7 +168,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   } else {  // Benchmark mode
     double start_time = timestamp();
     for (int i = 0; i < LOOP_NUM; i++) {
-      winconv_2x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
+      winconv_4x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
     }
     double end_time = timestamp();
 
