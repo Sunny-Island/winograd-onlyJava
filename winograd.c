@@ -173,7 +173,7 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     bufA[33] = _mm512_permutex2var_ps(bufG, idx1, bufI);
 
     bufB = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y + 2);
-    bufC = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y + 18);
+    bufC = _mm512_loadu_ps(dataSrc + (x+5)  * nrows + y + 18);
     bufD = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y + 34);
     bufE = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y + 50);
     bufF = _mm512_permutex2var_ps(bufB, idx0, bufC);
