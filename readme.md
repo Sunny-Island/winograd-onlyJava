@@ -121,7 +121,11 @@ Winograd 算法来自于 CVPR 2016 的一篇 paper：[Fast Algorithms for Convol
 
 * SIMD AVX256 && win4x3 算法 && 引入 MKL
 
-最后在赛方提供的服务器上，我们重新写了 winograd 算法，更新成 3D-winograd(4x3) 算法。在这里，我们分四个部分详细介绍该算法的实现：
+论文中的算法描述如下所示：
+
+![](https://s2.ax1x.com/2019/05/22/VpzRn1.png)
+
+最后在赛方提供的服务器上，我们参照论文和相关资料重写了 winograd 算法，更新成 3D-winograd(4x3) 算法。以下我们分四个部分详细介绍该算法的实现：
 
 1. Input transform
 
@@ -155,11 +159,13 @@ gcc -std=c11 -fopenmp -lmkl_rt -O3 driver.c winograd.c -o winograd -mavx512f
 测试 realworld.conf 的测试性能为 **2202GFlops**。
 
 ### 参考资料
-* [卷积神经网络中的 Winograd 快速卷积算法](https://www.cnblogs.com/shine-lee/p/10906535.html)
+* [SIMD 简介](https://zhuanlan.zhihu.com/p/55327037?utm_source=wechat_session&utm_medium=social&utm_oi=749557775620665344&utm_campaign=shareopn)
+* [AVX / AVX2 指令编程](https://zhuanlan.zhihu.com/p/94649418?utm_source=wechat_session&utm_medium=social&utm_oi=749557775620665344&utm_campaign=shareopn)
 * [为什么向量化计算会这么快？](https://zhuanlan.zhihu.com/p/72953129)
 * [高性能深度学习的编译优化](https://zhuanlan.zhihu.com/p/390801790?utm_source=wechat_session&utm_medium=social&utm_oi=749557775620665344&utm_campaign=shareopn)
-* [矩阵运算库在性能上区别大吗？](https://www.zhihu.com/question/27872849/answer/75968482?utm_source=wechat_session&utm_medium=social&utm_oi=749557775620665344&utm_content=group3_Answer&utm_campaign=shareopn)
+* [卷积神经网络中的 Winograd 快速卷积算法](https://www.cnblogs.com/shine-lee/p/10906535.html)
 * [优化 CPU 矩阵乘法](http://yuenshome.space/timeline/2018-12/optimize-cpu-gemm/)
+* [矩阵运算库在性能上区别大吗？](https://www.zhihu.com/question/27872849/answer/75968482?utm_source=wechat_session&utm_medium=social&utm_oi=749557775620665344&utm_content=group3_Answer&utm_campaign=shareopn)
 * [NCNN](https://github.com/Tencent/ncnn/tree/master/src/layer/arm)
 * [FeatherCNN](https://github.com/Tencent/FeatherCNN/blob/booster/src/booster/arm/winograd_kernels_F63.cpp)
 * [Optimization of Spatial Convolution in ConvNets on Intel KNL](https://github.com/chasingegg/Winconv/blob/master/reference/Optimization.pdf)
