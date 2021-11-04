@@ -26,7 +26,7 @@
 ## 组员
 * 赵家贝 清华大学软件学院研二 zjb20@mails.tsinghua.edu.cn
 * 谭新宇 清华大学软件学院研二 tanxinyu@apache.org
-* 宋一唱 清华大学软件学院研二
+* 宋一唱 清华大学软件学院研二 wildgold@qq.com
 
 ## 配置环境
 
