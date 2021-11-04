@@ -1,25 +1,23 @@
 <!-- TOC -->
 
 - [2021 九坤并行程序优化大赛初赛报告-OnlyJava 组](#2021-九坤并行程序优化大赛初赛报告-onlyjava-组)
-  - [组员](#组员)
-  - [配置环境](#配置环境)
-    - [硬件环境](#硬件环境)
-    - [软件环境](#软件环境)
-  - [Winograd](#winograd)
-    - [应用特性分析](#应用特性分析)
-    - [优化思路](#优化思路)
-    - [优化实现及工程细节](#优化实现及工程细节)
-    - [测试结果](#测试结果)
-    - [参考资料](#参考资料)
-  - [H5bench](#h5bench)
-    - [应用特性分析](#应用特性分析-1)
-      - [影响 IO 的因素](#影响-io-的因素)
-      - [如何测得正确的带宽](#如何测得正确的带宽)
-    - [优化思路](#优化思路-1)
-    - [实现细节](#实现细节)
-    - [实验结果及讨论](#实验结果及讨论)
-    - [参考资料](#参考资料-1)
-  - [总结](#总结)
+    - [组员](#组员)
+    - [配置环境](#配置环境)
+        - [硬件环境](#硬件环境)
+        - [软件环境](#软件环境)
+    - [Winograd](#winograd)
+        - [应用特性分析](#应用特性分析)
+        - [优化思路](#优化思路)
+        - [优化实现及工程细节](#优化实现及工程细节)
+        - [测试结果](#测试结果)
+        - [参考资料](#参考资料)
+    - [H5bench](#h5bench)
+        - [应用特性分析](#应用特性分析-1)
+        - [系统 IO 调研](#系统-io-调研)
+        - [优化思路](#优化思路-1)
+        - [实现细节](#实现细节)
+        - [实验结果及讨论](#实验结果及讨论)
+        - [参考资料](#参考资料-1)
 
 <!-- /TOC -->
 
@@ -178,91 +176,109 @@ gcc -std=c11 -fopenmp -lmkl_rt -O3 driver.c winograd.c -o winograd -mavx512f
 
 ### 应用特性分析
 
-#### 影响 IO 的因素
+H5bench 是一个开源的 hdf5 [测试工具](https://github.com/hpc-io/h5bench)，其与 hdf5 进行了深度适配，能够测量 hdf5 在异步 IO，分块，压缩，多线程等场景下的读写性能。总体上来看这是一个 IO 密集的场景，因而优化便在于如果最大程度压榨出磁盘的性能。
 
-测量的精度是控制的上限，在 I\O 相关的问题中，如果不能准确地测量性能，就难以进行真正的改进，无法准确地分析瓶颈。因此我们对 Linux I\O 进行了一定的调研，分析了可能影响带宽的因素、如何测量带宽和性能抖动的原因。从这些调研出发，也能引出我们进行优化的主要方向。
+### 系统 IO 调研
 
-● Page Cache
+测量的精度是控制的上限，在 IO 相关的问题中，如果不能准确地测量性能，就难以进行真正的改进，无法准确地分析瓶颈。因此我们对 Linux IO 进行了一定的调研，分析了可能影响带宽的因素、如何测量带宽和性能抖动的原因。
+
+* Page Cache
+
 在 Linux 的实现中，文件 Cache 分为 Page Cache 和 Buffer Cache，一个 Page Cache 包含若干个 Buffer Cache。Page Cache 主要用来作为文件系统上的文件数据的缓存来用，Buffer Cache 则主要是设计用来在系统对块设备进行读写的时候，对块进行数据缓存的系统来使用。
-当 Linux 内核开始一个读操作，比如，执行 file->f_op->read() 或 file->f_op->write()，它会首先检查需要的数据是否在 Page Cache 中。如果命中 cache，则可直接从内存中读取。因为访问磁盘的速度要远远低于访问内存的速度（ms 和 ns 的差距），因此命中 cache 可以极大地提高 I/O 速度。
+当 Linux 内核开始一个读操作，比如，执行 file->f_op->read() 或 file->f_op->write()，它会首先检查需要的数据是否在 Page Cache 中。如果命中 cache，则可直接从内存中读取。因为访问磁盘的速度要远远低于访问内存的速度（ms 和 ns 的差距），因此命中 cache 可以极大地提高 IO 速度。
 具体到 Linux 内核的读操作中，内核首先调用 find_get_page() 尝试在 page cache 中找到需要的数据。如果搜索的页并不在 page cache 中，find_get_page() 返回 NULL，并且内核将分配一个新页面，然后调用 add_to_page_cache_lru() 将之前搜索的页加入 page cache 中。最后调用 readpage() 将需要的数据从磁盘读入。
-在对读取同一个文件的带宽进行多次测量时，需要运行
-echo 3 >/proc/sys/vm/drop_caches
-来手动清空 Page Cache，否则内核存在直接从内存中读取数据的可能性，导致实测的 I/O 带宽失准。
 
-● 异步 I/O
-异步 I/O 的工作方式是当进程读写文件时，一旦读写操作进入队列函数就结束，甚至有可能真正的 I/O 数据传输还没有开始，这样调用进程就可以在数据正在传输时继续自己的运行。
-io_uring 是 2019 年 Linux5.1 内核引入的取代传统 Linux AIO 的高性能异步 I/O 框架。通过全新的设计，共享内存，IO 过程不需要系统调用，由内核完成 IO 的提交， 以及 IO completion polling 机制，实现了高 IOPS 和高 Bandwidth。
-h5bench 提供了使用 HDF5 Asynchronous I/O VOL connector 为支撑的异步 I/O 模式。HDF5 Asynchronous I/O VOL connector 利用 HDF5 异步接口，通过对 I/O 操作尽早调度以及与计算和通信并行执行，有效提高了 HDF5 的整体运行效率。
+因此，在对读取同一个文件的带宽进行多次测量时，需要运行
+`echo 3 >/proc/sys/vm/drop_caches`
+来手动清空 Page Cache，否则内核存在直接从内存中读取数据的可能性，导致实测的 IO 带宽失准。
 
-● 并行 I/O
-并行 I/O 是一种使用不同进程同时访问磁盘数据的技术，能够最大化带宽和速度。从 Linux 内核的角度看，块 I/O 操作的基本容器由 bio 结构体表示，其指向一个 bio_vec 结构体链表，这些结构体描述了每隔片段再物理页中的实际位置。块 I/O 层通过 bi_idx 域跟踪块 I/O 操作的完成进度，同时也起到分割 bio 结构体的作用，为 I/O 操作的并行执行提供条件。HDF5 使用 MPI-I/O 的接口，从而支持了部分并行 I/O 操作，提供了比 MPI-I/O 更高级的数据抽象。
+* 异步 IO
 
-● 文件系统 (RAID/NFS)
-RAID 通过将多块独立的磁盘（物理硬盘）按不同方式组合起来形成一个磁盘组（逻辑硬盘），从而提供比单个硬盘更高的 I/O 性能和数据冗余。不同的 RAID 级别有不同的 I/O 性能特点。如 RAID5 采用磁盘分段加奇偶校验技术，读出效率很高，写入效率一般。
-若实际的文件系统为 NFS，或是包含 NFS 的混合形态，那么实际的 I/O 带宽可能受网络带宽限制。通过网络传输的数据也需要的额外的校验操作，从而进一步限制 I/O 带宽。
+异步 IO 的工作方式是当进程读写文件时，一旦读写操作进入队列函数就结束，甚至有可能真正的 IO 数据传输还没有开始，这样调用进程就可以在数据正在传输时继续自己的运行。
 
-● 性能抖动
-SSD 内部的 I/O 性能抖动：比特错误（随着使用时间增加，比特错误率越来越高，因比特错误导致的读延迟概率和时间也会随之增高）、读写/擦除操作冲突（当读写操作与擦除操作冲突会导致读写操作延迟）、垃圾回收（SSD 内部进行 GC 时会占用磁盘资源）、读平衡（数据迁移与用户 I/O 之间的资源竞争）。
-HDD 内部的 I/O 性能抖动：机械硬盘性能受数据随机/顺序读写因素影响较大。此外，跨盘符时会出现性能抖动。
-磁盘带宽占用：当其他进程当前任务竞争磁盘 I/O 时，会出现性能抖动。
-内存占用：当系统中存在内存不足的压力时，Linux 内核会利用 flusher 线程对 Page Cache 进行回写动作，势必会影响 I/O 性能，造成性能抖动。
+io_uring 是 2019 年 Linux5.1 内核引入的取代传统 Linux AIO 的高性能异步 IO 框架。通过全新的设计，共享内存，IO 过程不需要系统调用，由内核完成 IO 的提交， 以及 IO completion polling 机制，实现了高 IOPS 和高 Bandwidth。
 
-#### 如何测得正确的带宽
+h5bench 提供了使用 HDF5 Asynchronous IO VOL connector 为支撑的异步 IO 模式。HDF5 Asynchronous IO VOL connector 利用 HDF5 异步接口，通过对 IO 操作尽早调度以及与计算和通信并行执行，有效提高了 HDF5 的整体运行效率。
 
-● I/O 测试/监控工具
-FIO 是一个可以产生很多线程或进程并执行用户指定的特定类型 I/O 操作的工具。FIO 支持十几种不同类型的 io 引擎（libaio、sync、mmap、posixaio、network 等等），可以测试块设备或文件，可以通过多线程或进程模拟各种 io 操作，可以测试统计 iops、带宽和时延等性能。通过 FIO 相应模式测得的设备 I/O 带宽是我们可达到的带宽性能的极限。
+* 并行 IO
+
+并行 IO 是一种使用不同进程同时访问磁盘数据的技术，能够最大化带宽和速度。从 Linux 内核的角度看，块 IO 操作的基本容器由 bio 结构体表示，其指向一个 bio_vec 结构体链表，这些结构体描述了每个片段在物理页中的实际位置。块 IO 层通过 bi_idx 域跟踪块 IO 操作的完成进度，同时也起到分割 bio 结构体的作用，为 IO 操作的并行执行提供条件。
+
+HDF5 使用 MPI-IO 的接口，从而支持了部分并行 IO 操作，提供了比 MPI-IO 更高级的数据抽象。
+
+* 文件系统 (RAID/NFS)
+
+RAID 通过将多块独立的磁盘（物理硬盘）按不同方式组合起来形成一个磁盘组（逻辑硬盘），从而提供比单个硬盘更高的 IO 性能和数据冗余。不同的 RAID 级别有不同的 IO 性能特点。如 RAID5 采用磁盘分段加奇偶校验技术，读出效率很高，写入效率一般。
+
+若实际的文件系统为 NFS，或是包含 NFS 的混合形态，那么实际的 IO 带宽可能受网络带宽限制。通过网络传输的数据也需要的额外的校验操作，从而进一步限制 IO 带宽。
+
+* 性能抖动
+
+SSD 内部的 IO 性能抖动：比特错误（随着使用时间增加，比特错误率越来越高，因比特错误导致的读延迟概率和时间也会随之增高）、读写/擦除操作冲突（当读写操作与擦除操作冲突会导致读写操作延迟）、垃圾回收（SSD 内部进行 GC 时会占用磁盘资源）、读平衡（数据迁移与用户 IO 之间的资源竞争）等等。
+
+HDD 内部的 IO 性能抖动：机械硬盘性能受数据随机/顺序读写因素影响较大。此外，跨盘读写时会出现性能抖动。
+
+磁盘带宽占用：当其他进程当前任务竞争磁盘 IO 时，会出现性能抖动。
+
+内存占用：当系统中存在内存不足的压力时，Linux 内核会利用 flusher 线程对 Page Cache 进行回写动作，势必会影响 IO 性能，造成性能抖动。
+
+* IO 测试工具
+
+FIO 是一个可以产生很多线程或进程并执行用户指定的特定类型 IO 操作的工具。FIO 支持十几种不同类型的 io 引擎（libaio、sync、mmap、posixaio、network 等等），可以测试块设备或文件，可以通过多线程或进程模拟各种 io 操作，可以测试统计 iops、带宽和时延等性能。通过 FIO 相应模式测得的设备 IO 带宽是我们可达到的带宽性能的极限。
+
 系统设备 IO 负载情况的监控工具有 iotop、iostat 等。
 
 ### 优化思路
+
 首先介绍一下三个配置文件分别代表了怎样的读取模式。
-cc1d.cfg是一维数据的顺序全量读取。cc2d.cfg是二维数据的全量读取。stride1d.cfg也是一维数据的读取，但是是读取一段长度为BLOCK_SIZE的数据后，跳过接下来的STRIDE_SIZE个数据，总共重复BLOCK_CNT次。
-在阅读了h5bench作者的论文以及对系统I/O做了初步的了解之后，我们打算从以下几个方面进行参数的优化。
+* cc1d.cfg 是一维数据的顺序全量读取。
+* cc2d.cfg 是二维数据的全量读取。
+* stride1d.cfg 也是一维数据的读取，但是是读取一段长度为 BLOCK_SIZE 的数据后，跳过接下来的 STRIDE_SIZE 个数据，总共重复 BLOCK_CNT 次。
 
-- FILE_PATTERN/MEMORY_PATTERN:作者在论文中提到CC/CI/IC/II四种写入模式的性能测试，分别对应着文件和内存中数据的不同分布情况。应该对这两个参数进行调整。
+在阅读了 h5bench 作者的论文以及对系统 IO 做了初步的了解之后，我们打算从以下几个方面进行参数的优化。
 
-- ASYNC_MODE:通过与项目配套的 Virtual Object Layer(VOL)可以实现异步写入，通过另起一个后台进程，在应用程序进程进行计算的时候执行真正的写入。
+- FILE_PATTERN/MEMORY_PATTERN: 作者在论文中提到 CC/CI/IC/II 四种写入模式的性能测试，分别对应着文件和内存中数据的不同分布情况。应该对这两个参数进行调整。
 
-- Compress:文件压缩可以以计算量换取I/O速度。其中分块的参数需要调参。
+- ASYNC_MODE: 通过与项目配套的 Virtual Object Layer(VOL) 可以实现异步写入，通过另起一个后台进程，在应用程序进程进行计算的时候执行真正的读写。
 
-- MPI:通过多进程，给每段进程分配等量的读取任务实现并行加速的效果。其中MPI的进程数需要调参。
+- Compress: 文件压缩可以以计算量换取 IO 速度，其中分块的参数需要调参。
 
-- COLLECTIVE I/O: 通过合并多个进程的I/O命令减少系统调用
+- MPI: 通过多进程，给每段进程分配等量的读取任务实现并行加速的效果。其中 MPI 的进程数需要调参。
 
+- COLLECTIVE IO: 通过合并多个进程的 IO 命令减少系统调用。
 
 ### 实现细节
-在对以上环节进行测试时，我们发现COLLECTIVE I/O的开启与否对性能影响很小，因此不单独列在实验结果中。
 
-MPI执行的并行度均为16。
+在对以上环节进行测试时，我们发现 COLLECTIVE IO 的开启与否对性能影响很小，因此不单独列在实验结果中。
 
-在测试FILE_PATTERN/MEMORY_PATTERN时，我们发现作者对write支持了CC/CI/IC/II四种模式，但是对read只支持CC和C-STRIDED两种模式，因此只对STRIDED读取模式进行了这个优化的实验比较。
+MPI 执行的并行度均为 16。
 
-在压缩环节，我们定义了统一的chunk : # of particles为16，即1d和strided两种模式下chunk大小都为1M，2D的chunk大小为512*256。
+在测试 FILE_PATTERN/MEMORY_PATTERN 时，我们发现作者对 write 支持了 CC/CI/IC/II 四种模式，但是对 read 只支持 CC 和 C-STRIDED 两种模式，因此只对 STRIDED 读取模式进行了这个优化的实验比较。
 
-Async Mode统一调整为EXPLICIT，因为作者在论文中明确指出这种方式性能提升更多。另外IO_MEM_LIMIT均设置成略大于文件大小。
+在压缩环节，我们定义了统一的 chunk : # of particles 为 16，即 1d 和 strided 两种模式下 chunk 大小都为 1M，2D 的 chunk 大小为 512*256。
 
-在strided中我们可以直接读cc1d的h5数据，但后来发现将写入参数中额外配置BLOCK_SIZE、BLOCK_CN和STRIDE_SIZE进行写入新的h5数据，在所有读取场景下都有优化效果，因此这也算一个优化点。
+Async Mode 统一调整为 EXPLICIT，因为作者在论文中明确指出这种方式性能提升更多。另外 IO_MEM_LIMIT 均设置成略大于文件大小。
 
+在 strided 中我们可以直接读 cc1d 的 h5 数据，但后来发现将写入参数中额外配置 BLOCK_SIZE、BLOCK_CN 和 STRIDE_SIZE 进行写入新的 h5 数据，在所有读取场景下都有优化效果，因此这也算一个优化点。
 
 ### 实验结果及讨论
-在我们提出的几个优化点中，MPI对1d的数据有较为明显的优化效果，但在只开启MPI的条件下对2d和strided场景有少量负优化，这可能是由于进程数不合适导致的，后续可以通过调整进程数进一步探索。
 
-Compress的开启对1d有负优化，对2d和strided模式均有30%的正优化。这可能也是压缩比这个参数不合适导致的，可以通过调参找到不同读取模式下更合适的压缩比。
+在我们提出的几个优化点中，MPI 对 1d 的数据有较为明显的优化效果，但在只开启 MPI 的条件下对 2d 和 strided 场景有少量负优化，这可能是由于进程数不合适导致的，后续可以通过调整进程数进一步探索。
 
-另外，我们在测试中发现，开启async对Raw read rate有大概40%的提升，但是对Observed read rate提升不明显，这是由两个时间计量的方式不同导致的。
+Compress 的开启对 1d 有负优化，对 2d 和 strided 模式均有 30% 的正优化。这可能也是压缩比这个参数不合适导致的，可以通过调参找到不同读取模式下更合适的压缩比。
 
-对strided读取模式，我们单独测试了FILE_PATTERN/MEMORY_PATTERN分别设置成STRIDED/CONTIG模式和CONTIG/CONTIG模式，发现前者有6倍的性能提升。
+另外，我们在测试中发现，开启 async 对 Raw read rate 有大概 40% 的提升，但是对 Observed read rate 提升不明显，这是由两个时间计量的方式不同导致的，这里依然需要更细致的实验才能找到根因。
 
-对于1D的读取模式，最优的配置是async+MPI多进程。
-对于2D的读取模式，最优的配置是async+MPI+Compress。
-对于STRIDED读取模式，最优的配置是配置block参数写入+STRIDED/CONTIG模式读取+MPI+Compress。
+对 strided 读取模式，我们单独测试了 FILE_PATTERN/MEMORY_PATTERN 分别设置成 STRIDED/CONTIG 模式和 CONTIG/CONTIG 模式，发现前者有 6 倍的性能提升。
 
+对于 1D 的读取模式，最优的配置是 async+MPI 多进程。
+对于 2D 的读取模式，最优的配置是 async+MPI+Compress。
+对于 STRIDED 读取模式，最优的配置是配置 block 参数写入+STRIDED/CONTIG 模式读取+MPI+Compress。
 
 ### 参考资料
 
-* [h5bench: HDF5 I/O Kernel Suite
-for Exercising HPC I/O Patterns](https://sdm.lbl.gov/~sbyna/research/papers/2021/202106-CUG_2021_h5bench.pdf)
-
+* [h5bench: HDF5 IO Kernel Suite
+for Exercising HPC IO Patterns](https://sdm.lbl.gov/~sbyna/research/papers/2021/202106-CUG_2021_h5bench.pdf)
 * [On Implementing MPI-IO Portably and with High Performance](https://digital.library.unt.edu/ark:/67531/metadc715413/m2/1/high_res_d/775253.pdf)
-
-## 总结
+* [h5bench](https://h5bench.readthedocs.io/en/latest/)
+* [hdf5](https://portal.hdfgroup.org/display/HDF5/The+HDF5+API)
