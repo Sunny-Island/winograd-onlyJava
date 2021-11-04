@@ -232,12 +232,12 @@ FIO 是一个可以产生很多线程或进程并执行用户指定的特定类�
 
 ### 优化思路
 
-首先介绍一下三个配置文件分别代表了怎样的读取模式。
-* cc1d.cfg 是一维数据的顺序全量读取。
-* cc2d.cfg 是二维数据的全量读取。
-* stride1d.cfg 也是一维数据的读取，但是是读取一段长度为 BLOCK_SIZE 的数据后，跳过接下来的 STRIDE_SIZE 个数据，总共重复 BLOCK_CNT 次。
+首先介绍一下三个配置文件分别代表了怎样的读取模式，以及我们的优化的起点 baseline。
+* cc1d.cfg 是一维数据的顺序全量读取。我们的 baseline 是用赛方提供的 1d.cfg 生成 h5 文件，用 sample_read_cc1d.cfg 文件读取。
+* cc2d.cfg 是二维数据的全量读取。我们的 baseline 是用赛方提供的 2d.cfg 生成 h5 文件，用 sample_read_cc2d.cfg 文件读取。
+* stride1d.cfg 也是一维数据的读取，但是是读取一段长度为 BLOCK_SIZE 的数据后，跳过接下来的 STRIDE_SIZE 个数据，总共重复 BLOCK_CNT 次。我们的 baseline 是用赛方提供的 1d.cfg 生成 h5 文件，用 sample_read_stride1d.cfg 文件读取。
 
-在阅读了 h5bench 作者的论文以及对系统 IO 做了初步的了解之后，我们打算从以下几个方面进行参数的优化。
+在阅读了 h5bench 作者的论文以及对系统 I/O 做了初步的了解之后，我们打算从以下几个方面进行参数的优化。
 
 - FILE_PATTERN/MEMORY_PATTERN: 作者在论文中提到 CC/CI/IC/II 四种写入模式的性能测试，分别对应着文件和内存中数据的不同分布情况。应该对这两个参数进行调整。
 
@@ -271,11 +271,20 @@ Compress 的开启对 1d 有负优化，对 2d 和 strided 模式均有 30% 的�
 
 另外，我们在测试中发现，开启 async 对 Raw read rate 有大概 40% 的提升，但是对 Observed read rate 提升不明显，这是由两个时间计量的方式不同导致的，这里依然需要更细致的实验才能找到根因。
 
-对 strided 读取模式，我们单独测试了 FILE_PATTERN/MEMORY_PATTERN 分别设置成 STRIDED/CONTIG 模式和 CONTIG/CONTIG 模式，发现前者有 6 倍的性能提升。
+对于 1D 的读取模式，最优的配置是 async+MPI 多进程。最优的性能相较于 baseline(493.05:176.63) 提升了 2.79 倍。
+
+对于 2D 的读取模式，最优的配置是 async+MPI+Compress。最优的配置是 async+MPI 多进程。最优的性能相较于 baseline(251.28:154.07) 提升了 1.63 倍。
+
+对于 STRIDED 读取模式，最优的配置是配置 block 参数写入+STRIDED/CONTIG 模式读取+MPI+Compress+Async。最优的性能相较于 baseline(140.93:9.00) 提升了 15.66 倍。
 
 对于 1D 的读取模式，最优的配置是 async+MPI 多进程。
+![](static/1.jpeg)
 对于 2D 的读取模式，最优的配置是 async+MPI+Compress。
+![](static/2.png)
 对于 STRIDED 读取模式，最优的配置是配置 block 参数写入+STRIDED/CONTIG 模式读取+MPI+Compress。
+![](static/3.png)
+
+通过 iostat 命令查看在运行 1D 写入中的磁盘占用，能观察到多次磁盘 util 指标峰值达到 83%，期间有回落状态，分析应该是 compute 和 I/O 交替导致的。从峰值数据来看，对于 1D 的写入模式，我们还是发挥了大部分系统 I/O 的能力，但仍有优化空间。
 
 ### 参考资料
 
