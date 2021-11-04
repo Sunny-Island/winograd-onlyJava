@@ -145,7 +145,7 @@ Winograd 算法来自于 CVPR 2016 的一篇 paper：[Fast Algorithms for Convol
 
 这一步的优化包括算法优化、指令集优化，并且引入了 MKL 替代原来的大矩阵乘法。
 
-在算法实现方面注意调整内存的分布，尽量提高缓存命中；尽量使用循环展开，用代码量和可读性换性能；通过分 tile、分块操作的方法，将算法分割成一个个独立的部分，在保证正确性的前提下尽量提高并行度。这些优化提升了 13 倍左右的性能。 **(170GFlops->2200GFlops)**
+在算法实现方面注意调整内存的分布，尽量提高缓存命中；尽量使用循环展开，用代码量和可读性换性能；通过分 tile、分块操作的方法，将算法分割成一个个独立的部分，在保证正确性的前提下尽量提高并行度。这些优化提升了 13 倍左右的性能。 **(170GFlops->2236GFlops)**
 
 ### 测试结果
 
@@ -154,7 +154,9 @@ Winograd 算法来自于 CVPR 2016 的一篇 paper：[Fast Algorithms for Convol
 gcc -std=c11 -fopenmp -lmkl_rt -O3 driver.c winograd.c -o winograd -mavx512f
 ```
 
-测试 realworld.conf 的测试性能为 **2202GFlops**。
+small.conf 的测试性能为 **809GFlops**。
+
+realworld.conf 的测试性能为 **2236GFlops**。
 
 ### 参考资料
 * [SIMD 简介](https://zhuanlan.zhihu.com/p/55327037?utm_source=wechat_session&utm_medium=social&utm_oi=749557775620665344&utm_campaign=shareopn)

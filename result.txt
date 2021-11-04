@@ -1,0 +1,55 @@
+[u19@99442a48c1a5 winograd-onlyJava]$ ./winograd realworld.conf 0
+Layer 0 :  Elapse time 24.099121 ms. (  111.05 GFlops) 
+Layer 1 :  Elapse time 34.817829 ms. (  819.91 GFlops) 
+Layer 2 :  Elapse time 46.504529 ms. ( 1227.73 GFlops) 
+Layer 3 :  Elapse time 70.762990 ms. ( 1613.70 GFlops) 
+Layer 4 :  Elapse time 92.658541 ms. ( 2464.75 GFlops) 
+Layer 5 :  Elapse time 30.145099 ms. ( 2885.15 GFlops) 
+Layer 6 :  Elapse time 41.225488 ms. ( 4219.38 GFlops) 
+Layer 7 :  Elapse time 67.465250 ms. ( 5156.62 GFlops) 
+Layer 8 :  Elapse time 116.630321 ms. ( 5965.73 GFlops) 
+Layer 9 :  Elapse time 234.475241 ms. ( 1009.74 GFlops) 
+Layer 10:  Elapse time 21.575921 ms. (   98.45 GFlops) 
+Layer 11:  Elapse time 60.180771 ms. (  753.02 GFlops) 
+Layer 12:  Elapse time 19.471259 ms. ( 1116.69 GFlops) 
+Layer 13:  Elapse time 29.424269 ms. ( 1477.91 GFlops) 
+Layer 14:  Elapse time 13.084500 ms. (  934.74 GFlops) 
+Layer 15:  Elapse time 10.057230 ms. (  422.26 GFlops) 
+Layer 16:  Elapse time 15.809290 ms. (  716.33 GFlops) 
+Layer 17:  Elapse time 21.259699 ms. (  511.37 GFlops) 
+Total elapse time: 0.949647. ( 2236.19 GFlops) 
+------------------------------------------------------------------
+[u19@99442a48c1a5 winograd-onlyJava]$ ./winograd realworld.conf 1
+Layer 0 : (Channel Height Weight Filter Batch) = (3   112 112 64  64 ) : Validation Passed !
+Layer 1 : (Channel Height Weight Filter Batch) = (32  112 112 64  64 ) : Validation Passed !
+Layer 2 : (Channel Height Weight Filter Batch) = (64  112 112 64  64 ) : Validation Passed !
+Layer 3 : (Channel Height Weight Filter Batch) = (64  112 112 128 64 ) : Validation Passed !
+Layer 4 : (Channel Height Weight Filter Batch) = (128 112 112 128 64 ) : Validation Passed !
+Layer 5 : (Channel Height Weight Filter Batch) = (128 50  50  256 64 ) : Validation Passed !
+Layer 6 : (Channel Height Weight Filter Batch) = (256 50  50  256 64 ) : Validation Passed !
+Layer 7 : (Channel Height Weight Filter Batch) = (256 50  50  512 64 ) : Validation Passed !
+Layer 8 : (Channel Height Weight Filter Batch) = (512 50  50  512 64 ) : Validation Passed !
+Layer 9 : (Channel Height Weight Filter Batch) = (512 16  16  2048 64 ) : Validation Passed !
+Layer 10: (Channel Height Weight Filter Batch) = (3   100 100 32  128) : Validation Passed !
+Layer 11: (Channel Height Weight Filter Batch) = (32  100 100 64  128) : Validation Passed !
+Layer 12: (Channel Height Weight Filter Batch) = (64  50  50  64  128) : Validation Passed !
+Layer 13: (Channel Height Weight Filter Batch) = (64  50  50  128 128) : Validation Passed !
+Layer 14: (Channel Height Weight Filter Batch) = (128 20  26  96  128) : Validation Passed !
+Layer 15: (Channel Height Weight Filter Batch) = (96  12  12  192 128) : Validation Passed !
+Layer 16: (Channel Height Weight Filter Batch) = (192 12  12  256 128) : Validation Passed !
+Layer 17: (Channel Height Weight Filter Batch) = (256 8   8   512 128) : Validation Passed !
+------------------------------------------------------------------
+[u19@99442a48c1a5 winograd-onlyJava]$ ./winograd small.conf 0    
+Layer 0 :  Elapse time 0.019190 ms. (    0.72 GFlops) 
+Layer 1 :  Elapse time 0.019989 ms. (    3.46 GFlops) 
+Layer 2 :  Elapse time 0.028341 ms. (   87.80 GFlops) 
+Layer 3 :  Elapse time 0.091522 ms. ( 1856.05 GFlops) 
+Layer 4 :  Elapse time 6.773529 ms. (  802.51 GFlops) 
+Total elapse time: 0.006933. (  809.58 GFlops) 
+------------------------------------------------------------------
+[u19@99442a48c1a5 winograd-onlyJava]$ ./winograd small.conf 1
+Layer 0 : (Channel Height Weight Filter Batch) = (3   10  10  2   2  ) : Validation Passed !
+Layer 1 : (Channel Height Weight Filter Batch) = (3   10  10  10  2  ) : Validation Passed !
+Layer 2 : (Channel Height Weight Filter Batch) = (3   50  50  10  2  ) : Validation Passed !
+Layer 3 : (Channel Height Weight Filter Batch) = (32  50  50  64  2  ) : Validation Passed !
+Layer 4 : (Channel Height Weight Filter Batch) = (32  50  50  64  64 ) : Validation Passed !
