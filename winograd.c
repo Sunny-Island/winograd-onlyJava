@@ -555,9 +555,9 @@ static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, co
         // for (j = 0; j < lenY; ++j) {
         //     temp[i * 66 + j] = dataSrc[(x + i) * nrows + y + j];
         // }
-	    memset(temp + i * 66 + j, 0, sizeof(float) * (66 - lenY));
+	    memset(temp + i * 66 + lenY, 0, sizeof(float) * (66 - lenY));
     }
-    memset(temp + i * 66, 0,sizeof(float) *  (6 - i) * 66);
+    memset(temp + i * 66, 0, sizeof(float) *  (6 - i) * 66);
 
     get_tiles_4x3_16t(0, 0, 66, temp, dataDst, counter);
 }
