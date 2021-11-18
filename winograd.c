@@ -945,10 +945,10 @@ static void out_transform_4x3_16t(int x, int y, int nrows,
     bufD = _mm512_permutex2var_ps(bufH, idx0, bufI);
     bufE = _mm512_permutex2var_ps(bufH, idx1, bufI);
 
-    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 0, bufB);
-    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 16, bufC);
-    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 32, bufD);
-    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 48, bufE);
+    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 0, bufB);
+    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 16, bufC);
+    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 32, bufD);
+    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 48, bufE);
 
     bufB = _mm512_add_ps(bufTemp[6], bufTemp[7]);
     bufB = _mm512_add_ps(bufB, bufTemp[8]);
