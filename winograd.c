@@ -63,10 +63,10 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     bufA[4] = _mm512_permutex2var_ps(bufF, idx1, bufH);
     bufA[5] = _mm512_permutex2var_ps(bufG, idx1, bufI);
     /* 6, 7, 8, 9, 10, 11 */
-    bufB = _mm512_load_ps(dataSrc + (x+1) * nrows + y);
-    bufC = _mm512_load_ps(dataSrc + (x+1) * nrows + y + 16);
-    bufD = _mm512_load_ps(dataSrc + (x+1) * nrows + y + 32);
-    bufE = _mm512_load_ps(dataSrc + (x+1) * nrows + y + 48);
+    bufB = _mm512_loadu_ps(dataSrc + (x+1) * nrows + y);
+    bufC = _mm512_loadu_ps(dataSrc + (x+1) * nrows + y + 16);
+    bufD = _mm512_loadu_ps(dataSrc + (x+1) * nrows + y + 32);
+    bufE = _mm512_loadu_ps(dataSrc + (x+1) * nrows + y + 48);
     bufF = _mm512_permutex2var_ps(bufB, idx0, bufC);
     bufG = _mm512_permutex2var_ps(bufB, idx1, bufC);
     bufH = _mm512_permutex2var_ps(bufD, idx0, bufE);
@@ -87,10 +87,10 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     bufA[10] = _mm512_permutex2var_ps(bufF, idx1, bufH);
     bufA[11] = _mm512_permutex2var_ps(bufG, idx1, bufI);
     /* 12, 13, 14, 15, 16, 17 */
-    bufB = _mm512_load_ps(dataSrc + (x+2) * nrows + y);
-    bufC = _mm512_load_ps(dataSrc + (x+2) * nrows + y + 16);
-    bufD = _mm512_load_ps(dataSrc + (x+2) * nrows + y + 32);
-    bufE = _mm512_load_ps(dataSrc + (x+2) * nrows + y + 48);
+    bufB = _mm512_loadu_ps(dataSrc + (x+2) * nrows + y);
+    bufC = _mm512_loadu_ps(dataSrc + (x+2) * nrows + y + 16);
+    bufD = _mm512_loadu_ps(dataSrc + (x+2) * nrows + y + 32);
+    bufE = _mm512_loadu_ps(dataSrc + (x+2) * nrows + y + 48);
     bufF = _mm512_permutex2var_ps(bufB, idx0, bufC);
     bufG = _mm512_permutex2var_ps(bufB, idx1, bufC);
     bufH = _mm512_permutex2var_ps(bufD, idx0, bufE);
@@ -111,10 +111,10 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     bufA[16] = _mm512_permutex2var_ps(bufF, idx1, bufH);
     bufA[17] = _mm512_permutex2var_ps(bufG, idx1, bufI);
     /* 18, 19, 20, 21, 22, 23 */
-    bufB = _mm512_load_ps(dataSrc + (x+3) * nrows + y);
-    bufC = _mm512_load_ps(dataSrc + (x+3) * nrows + y + 16);
-    bufD = _mm512_load_ps(dataSrc + (x+3) * nrows + y + 32);
-    bufE = _mm512_load_ps(dataSrc + (x+3) * nrows + y + 48);
+    bufB = _mm512_loadu_ps(dataSrc + (x+3) * nrows + y);
+    bufC = _mm512_loadu_ps(dataSrc + (x+3) * nrows + y + 16);
+    bufD = _mm512_loadu_ps(dataSrc + (x+3) * nrows + y + 32);
+    bufE = _mm512_loadu_ps(dataSrc + (x+3) * nrows + y + 48);
     bufF = _mm512_permutex2var_ps(bufB, idx0, bufC);
     bufG = _mm512_permutex2var_ps(bufB, idx1, bufC);
     bufH = _mm512_permutex2var_ps(bufD, idx0, bufE);
@@ -135,10 +135,10 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     bufA[22] = _mm512_permutex2var_ps(bufF, idx1, bufH);
     bufA[23] = _mm512_permutex2var_ps(bufG, idx1, bufI);
     /* 24, 25, 26, 27, 28, 29 */
-    bufB = _mm512_load_ps(dataSrc + (x+4) * nrows + y);
-    bufC = _mm512_load_ps(dataSrc + (x+4) * nrows + y + 16);
-    bufD = _mm512_load_ps(dataSrc + (x+4) * nrows + y + 32);
-    bufE = _mm512_load_ps(dataSrc + (x+4) * nrows + y + 48);
+    bufB = _mm512_loadu_ps(dataSrc + (x+4) * nrows + y);
+    bufC = _mm512_loadu_ps(dataSrc + (x+4) * nrows + y + 16);
+    bufD = _mm512_loadu_ps(dataSrc + (x+4) * nrows + y + 32);
+    bufE = _mm512_loadu_ps(dataSrc + (x+4) * nrows + y + 48);
     bufF = _mm512_permutex2var_ps(bufB, idx0, bufC);
     bufG = _mm512_permutex2var_ps(bufB, idx1, bufC);
     bufH = _mm512_permutex2var_ps(bufD, idx0, bufE);
@@ -159,10 +159,10 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     bufA[28] = _mm512_permutex2var_ps(bufF, idx1, bufH);
     bufA[29] = _mm512_permutex2var_ps(bufG, idx1, bufI);
     /* 30, 31, 32, 33, 34, 35 */
-    bufB = _mm512_load_ps(dataSrc + (x+5) * nrows + y);
-    bufC = _mm512_load_ps(dataSrc + (x+5) * nrows + y + 16);
-    bufD = _mm512_load_ps(dataSrc + (x+5) * nrows + y + 32);
-    bufE = _mm512_load_ps(dataSrc + (x+5) * nrows + y + 48);
+    bufB = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y);
+    bufC = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y + 16);
+    bufD = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y + 32);
+    bufE = _mm512_loadu_ps(dataSrc + (x+5) * nrows + y + 48);
     bufF = _mm512_permutex2var_ps(bufB, idx0, bufC);
     bufG = _mm512_permutex2var_ps(bufB, idx1, bufC);
     bufH = _mm512_permutex2var_ps(bufD, idx0, bufE);
@@ -945,10 +945,10 @@ static void out_transform_4x3_16t(int x, int y, int nrows,
     bufD = _mm512_permutex2var_ps(bufH, idx0, bufI);
     bufE = _mm512_permutex2var_ps(bufH, idx1, bufI);
 
-    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 0, bufB);
-    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 16, bufC);
-    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 32, bufD);
-    _mm512_storeu_ps(dataDst + (x + 0) * nrows + y + 48, bufE);
+    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 0, bufB);
+    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 16, bufC);
+    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 32, bufD);
+    _mm512_store_ps(dataDst + (x + 0) * nrows + y + 48, bufE);
 
     bufB = _mm512_add_ps(bufTemp[6], bufTemp[7]);
     bufB = _mm512_add_ps(bufB, bufTemp[8]);
