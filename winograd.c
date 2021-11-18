@@ -551,10 +551,11 @@ static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, co
     if (2 == lenX || 2 == lenY) return;
     int i, j;
     for (i = 0; i < lenX; ++i) {
-        for (j = 0; j < lenY; ++j) {
-            temp[i * 66 + j] = dataSrc[(x + i) * nrows + y + j];
-        }
-	    memset(temp + i * 66 + j, 0, sizeof(float) * (66 - j));
+        memcpy(temp + i * 66, (x + i) * nrows + y, sizeof(int) * lenY);
+        // for (j = 0; j < lenY; ++j) {
+        //     temp[i * 66 + j] = dataSrc[(x + i) * nrows + y + j];
+        // }
+	    memset(temp + i * 66 + j, 0, sizeof(float) * (66 - lenY));
     }
     memset(temp + i * 66, 0,sizeof(float) *  (6 - i) * 66);
 
