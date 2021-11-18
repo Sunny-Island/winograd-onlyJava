@@ -549,12 +549,9 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
 static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, const float *dataSrc,
                                  float *temp, float *dataDst, int *counter) {
     if (2 == lenX || 2 == lenY) return;
-    int i, j;
+    int i;
     for (i = 0; i < lenX; ++i) {
         memcpy(temp + i * 66, dataSrc + (x + i) * nrows + y, sizeof(float) * lenY);
-        // for (j = 0; j < lenY; ++j) {
-        //     temp[i * 66 + j] = dataSrc[(x + i) * nrows + y + j];
-        // }
 	    memset(temp + i * 66 + lenY, 0, sizeof(float) * (66 - lenY));
     }
     memset(temp + i * 66, 0, sizeof(float) *  (6 - i) * 66);
@@ -1061,9 +1058,7 @@ static inline void pad_out_transform(int x, int y, int lenX, int lenY, int nrows
     }
     out_transform_4x3_16t(0, 0, 64, dataSrc, temp, counter);
     for (int i = 0; i < lenX; ++i) {
-        for (int j = 0; j < lenY; ++j) {
-            dataDst[(x + i) * nrows + y + j] = temp[i * 64 + j];
-        }
+        memcpy(dataDst + (x + i) * nrows + y, temp + i * 64, sizeof(float) * lenY);
     }
 }
 
