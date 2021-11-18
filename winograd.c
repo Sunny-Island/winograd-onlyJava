@@ -551,7 +551,7 @@ static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, co
     if (2 == lenX || 2 == lenY) return;
     int i, j;
     for (i = 0; i < lenX; ++i) {
-        memcpy(temp + i * 66, dataDst + (x + i) * nrows + y, sizeof(float) * lenY);
+        memcpy(temp + i * 66, dataSrc + (x + i) * nrows + y, sizeof(float) * lenY);
         // for (j = 0; j < lenY; ++j) {
         //     temp[i * 66 + j] = dataSrc[(x + i) * nrows + y + j];
         // }
