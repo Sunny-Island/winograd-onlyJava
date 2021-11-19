@@ -554,15 +554,17 @@ static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, co
         for (j = 0; j < lenY; ++j) {
             temp[i * 66 + j] = dataSrc[(x + i) * nrows + y + j];
         }
-        for (; j < 66; ++j) {
-            temp[i * 66 + j] = 0;
-        }
+	memset(temp + i * 66 + j, 0, sizeof(float) * (66 - j));
+        //for (; j < 66; ++j) {
+         //   temp[i * 66 + j] = 0;
+        //}
     }
-    for (; i < 6; ++i) {
-        for (j = 0; j < 66; ++j) {
-            temp[i * 66 + j] = 0;
-        }
-    }
+    memset(temp + i * 66, 0,sizeof(float) *  (6 - i) * 66);
+    //for (; i < 6; ++i) {
+        //for (j = 0; j < 66; ++j) {
+        //    temp[i * 66 + j] = 0;
+      //  }
+    //}
 
     get_tiles_4x3_16t(0, 0, 66, temp, dataDst, counter);
 }
@@ -1200,13 +1202,15 @@ static void batched_gemm_4x3(const float* image, const int irows, const int icol
     const int ldi = irows;
     const int ldf = frows;
     const int ldo = irows;
+    const int irc = irows * icols;
+    const int irf = irows * fcols;
 
     #pragma omp parallel for collapse(2) private(t, i)
     for (i = 0; i < 36; ++i) {
         for (t = 0; t < batch; ++t) {
-            const float* im = image + i * ISTRIDE + t * irows * icols;
+            const float* im = image + i * ISTRIDE + t * irc;
             const float* fi = filter + i * FSTRIDE;
-            float *ot = out + i * OSTRIDE + t * irows * fcols;
+            float *ot = out + i * OSTRIDE + t * irf;
 
             sgemm(&trans, &trans, &irows, &fcols, &icols, &alpha, im, &ldi, fi, &ldf, &beta, ot, &ldo);
         }
