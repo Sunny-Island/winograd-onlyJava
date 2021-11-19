@@ -70,7 +70,7 @@ void winconv_4x3(float *__restrict__ image, const int irows, const int icols,
                  const int C, float *__restrict__ filter, const int K,
                  const int batch, float *__restrict__ out,
                  float *__restrict__ U, float *__restrict__ V,
-                 float *__restrict__ M);
+                 float *__restrict__ M, int M4x3);
 
 int naive_conv(float *in, float *kn, float *out, const int N, const int C,
                const int H, const int W, const int K) {
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
   // srand(time(NULL));
   srand(20210930);
 
-  double total_time;
-  long total_flops;
+  double total_time = 0;
+  long total_flops = 0;
 
   //winograd_init(layer_num, Batch_arr, C_arr, H_arr, W_arr, K_arr);
 
