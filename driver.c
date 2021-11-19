@@ -112,7 +112,7 @@ int naive_conv(float *in, float *kn, float *out, const int N, const int C,
 
 void winograd_conv(const int layer_idx, const int validation_mode,
                    const int irows, const int icols, const int C, const int K,
-                   const int batch, long *total_flops, double *total_time) {
+                   const int batch, long *total_flops, double *total_time, int M4x3) {
   long i, j, n;
   const int outHeight = irows - 2;
   const int outWidth = icols - 2;
@@ -144,7 +144,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   // filter[i] = rand()%10;
 
   // Warm up
-  winconv_4x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
+  winconv_4x3(image, irows, icols, C, filter, K, batch, out, U, V, M, M4x3);
   if (validation_mode) {  // Verify mode. Check the result
     float *out_ref = (float *)malloc(batch * K * sizeO * sizeof(float));
     memset(out_ref, 0, batch * K * sizeO * sizeof(float));
@@ -168,7 +168,7 @@ void winograd_conv(const int layer_idx, const int validation_mode,
   } else {  // Benchmark mode
     double start_time = timestamp();
     for (int i = 0; i < LOOP_NUM; i++) {
-      winconv_4x3(image, irows, icols, C, filter, K, batch, out, U, V, M);
+      winconv_4x3(image, irows, icols, C, filter, K, batch, out, U, V, M, M4x3);
     }
     double end_time = timestamp();
 
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
            &Batch_arr[l]);
   }
   fclose(input);
-
+  int Merge_arr[18] ={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}; 
   // srand(time(NULL));
   srand(20210930);
 
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
 
   for (int l = 0; l < layer_num; l++) {
     winograd_conv(l, validation_mode, H_arr[l], W_arr[l], C_arr[l], K_arr[l],
-                  Batch_arr[l], &total_flops, &total_time);
+                  Batch_arr[l], &total_flops, &total_time, Merge_arr[l]);
   }
 
   if (!validation_mode)

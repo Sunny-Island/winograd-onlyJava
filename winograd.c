@@ -1239,7 +1239,7 @@ static void out_transform_4x3(const float* __restrict__ d, const int K, const in
 void winconv_4x3(float* __restrict__ image, const int irows, const int icols,
                  const int C, float* __restrict__ filter, const int K, const int batch,
                  float* __restrict__ out, float *__restrict__ U, float *__restrict__ V,
-                 float *__restrict__ M) {
+                 float *__restrict__ M, int M4x3) {
     const int outHeight = irows - 2;
     const int outWidth = icols - 2;
     const int sizeI = irows * icols;
@@ -1249,7 +1249,7 @@ void winconv_4x3(float* __restrict__ image, const int irows, const int icols,
     const int padTiles = padHeight / 4 * padWidth / 4;
     const int b_batchSize = 64;
 
-    int merge = 1;
+    int merge = M4x3;
 
     filter_transform_4x3(filter, C, K, U);
 
