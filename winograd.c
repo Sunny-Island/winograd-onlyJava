@@ -40,10 +40,10 @@ static void get_tiles_4x3_16t(long x, long y, long nrows, const float *dataSrc,
        3  7  11 15 19 23 27 31 35 39 43 47 51 55 59 63    2, 4 permute1 */
 
     /* 0, 1, 2, 3, 4, 5 */
-    bufB = _mm512_load_ps(dataSrc + (x+0) * nrows + y);
-    bufC = _mm512_load_ps(dataSrc + (x+0) * nrows + y + 16);
-    bufD = _mm512_load_ps(dataSrc + (x+0) * nrows + y + 32);
-    bufE = _mm512_load_ps(dataSrc + (x+0) * nrows + y + 48);
+    bufB = _mm512_loadu_ps(dataSrc + (x+0) * nrows + y);
+    bufC = _mm512_loadu_ps(dataSrc + (x+0) * nrows + y + 16);
+    bufD = _mm512_loadu_ps(dataSrc + (x+0) * nrows + y + 32);
+    bufE = _mm512_loadu_ps(dataSrc + (x+0) * nrows + y + 48);
     bufF = _mm512_permutex2var_ps(bufB, idx0, bufC);
     bufG = _mm512_permutex2var_ps(bufB, idx1, bufC);
     bufH = _mm512_permutex2var_ps(bufD, idx0, bufE);
