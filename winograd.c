@@ -13,10 +13,10 @@ extern long ISTRIDE;
 extern long FSTRIDE;
 extern long OSTRIDE;
 
-static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
-                              float *dataDst, int *counter)
+static void get_tiles_4x3_16t(long x, long y, long nrows, const float *dataSrc,
+                              float *dataDst, long *counter)
 {
-    const int coter = *counter;
+    const long coter = *counter;
     __m512 bufA[36];
     __m512 bufB, bufC, bufD, bufE, bufF, bufG, bufH, bufI;
     __m512i idx0 = _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16,
@@ -546,10 +546,10 @@ static void get_tiles_4x3_16t(int x, int y, int nrows, const float *dataSrc,
     *counter += 16;
 }
 
-static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, const float *dataSrc,
-                                 float *temp, float *dataDst, int *counter) {
+static inline void pad_get_tiles(long x, long y, long lenX, long lenY, long nrows, const float *dataSrc,
+                                 float *temp, float *dataDst, long *counter) {
     if (2 == lenX || 2 == lenY) return;
-    int i;
+    long i;
     for (i = 0; i < lenX; ++i) {
         memcpy(temp + i * 66, dataSrc + (x + i) * nrows + y, sizeof(float) * lenY);
 	    memset(temp + i * 66 + lenY, 0, sizeof(float) * (66 - lenY));
@@ -559,9 +559,9 @@ static inline void pad_get_tiles(int x, int y, int lenX, int lenY, int nrows, co
     get_tiles_4x3_16t(0, 0, 66, temp, dataDst, counter);
 }
 
-static inline void get_tiles_4x3_1t(int x, int y, int nrows, const float *dataSrc,
-                                    float *dataDst, int *counter) {
-    int coter = *counter;
+static inline void get_tiles_4x3_1t(long x, long y, long nrows, const float *dataSrc,
+                                    float *dataDst, long *counter) {
+    long coter = *counter;
     float temp[36] __attribute__((aligned(64)));
 
     temp[0] = dataSrc[(x + 0) * nrows + y + 0];
@@ -677,8 +677,8 @@ static inline void get_tiles_4x3_1t(int x, int y, int nrows, const float *dataSr
     (*counter)++;
 }
 
-static void filter_transform_4x3(const float* __restrict__ filter, const int C, const int K, float* __restrict__ out) {
-    int m, n, x;
+static void filter_transform_4x3(const float* __restrict__ filter, const long C, const long K, float* __restrict__ out) {
+    long m, n, x;
     const float *F;
     const float r4 = 1.0 / 4;
     const float r6 = 1.0 / 6;
@@ -761,10 +761,10 @@ static void filter_transform_4x3(const float* __restrict__ filter, const int C, 
     }
 }
 
-static void out_transform_4x3_16t(int x, int y, int nrows,
+static void out_transform_4x3_16t(long x, long y, long nrows,
                                   const float* dataSrc, float* dataDst,
-                                  int *counter) {
-    int coter = *counter;
+                                  long *counter) {
+    long coter = *counter;
     float c1[384] __attribute__((aligned(64)));
     __m512 bufA[36], bufB, bufC, bufD, bufE, bufF, bufG, bufH, bufI;
     __m512 bufTemp[24];
@@ -1051,20 +1051,20 @@ static void out_transform_4x3_16t(int x, int y, int nrows,
     *counter += 16;
 }
 
-static inline void pad_out_transform(int x, int y, int lenX, int lenY, int nrows, const float *dataSrc,
-                                     float *temp, float *dataDst, int *counter) {
+static inline void pad_out_transform(long x, long y, long lenX, long lenY, long nrows, const float *dataSrc,
+                                     float *temp, float *dataDst, long *counter) {
     if (0 == lenX || 0 == lenY) {
         return;
     }
     out_transform_4x3_16t(0, 0, 64, dataSrc, temp, counter);
-    for (int i = 0; i < lenX; ++i) {
+    for (long i = 0; i < lenX; ++i) {
         memcpy(dataDst + (x + i) * nrows + y, temp + i * 64, sizeof(float) * lenY);
     }
 }
 
-static inline void out_transform_4x3_1t(int x, int y, int nrows, const float *dataSrc,
-                                        float *dataDst, int *counter) {
-    int coter = *counter;
+static inline void out_transform_4x3_1t(long x, long y, long nrows, const float *dataSrc,
+                                        float *dataDst, long *counter) {
+    long coter = *counter;
     float c1[36]__attribute__((aligned(64)));
     c1[0] = dataSrc[0 * OSTRIDE + coter];
     c1[1] = dataSrc[1 * OSTRIDE + coter];
@@ -1149,25 +1149,25 @@ static inline void out_transform_4x3_1t(int x, int y, int nrows, const float *da
     (*counter)++;
 }
 
-static void get_tiles_4x3(const float* __restrict__ image, const int ldi, const int irows, const int icols,
-                          const int sizeI, const int C, float* __restrict__ otile, const int N, const int ntiles, const int M) {
-    int outHeight = irows - 2;
-    int outWidth = icols - 2;
-    int fullOutHeight = outHeight / 4 * 4;
-    int fullOutWidth = outWidth / 64 * 64;
+static void get_tiles_4x3(const float* __restrict__ image, const long ldi, const long irows, const long icols,
+                          const long sizeI, const long C, float* __restrict__ otile, const long N, const long ntiles, const long M) {
+    long outHeight = irows - 2;
+    long outWidth = icols - 2;
+    long fullOutHeight = outHeight / 4 * 4;
+    long fullOutWidth = outWidth / 64 * 64;
    
     #pragma omp parallel for 
-    for (int t = 0; t < N * C; ++t) {
-        int i, j;
+    for (long t = 0; t < N * C; ++t) {
+        long i, j;
 
-        const int t1 = t / (C * M);
-        const int t2 = (t % (C * M)) / M;
-        const int t3 = t % M;
+        const long t1 = t / (C * M);
+        const long t2 = (t % (C * M)) / M;
+        const long t3 = t % M;
 
         const float *data = image + (t1 * M * C + t3 * C + t2) * sizeI;
-        int tile_count = t * ntiles;
+        long tile_count = ntiles * t;
 
-        const int num16t = (icols - 2) / 64 * 64;
+        const long num16t = (icols - 2) / 64 * 64;
         float temp[6 * 66]__attribute__((aligned(64)));
         for (i = 0; i < fullOutHeight; i += 4) {
             for (j = 0; j < fullOutWidth; j += 64) {
@@ -1183,7 +1183,7 @@ static void get_tiles_4x3(const float* __restrict__ image, const int ldi, const 
 }
 
 static void batched_gemm_4x3(const float* image, const int irows, const int icols, const float* filter, const int frows, const int fcols, float* __restrict__ out, const int batch) {
-    int t, i;
+    long t, i;
     const char trans = 'n';
     const float alpha = 1.0;
     const float beta = 0.0;
@@ -1205,23 +1205,23 @@ static void batched_gemm_4x3(const float* image, const int irows, const int icol
     }
 }
 
-static void out_transform_4x3(const float* __restrict__ d, const int K, const int ntiles, float* __restrict__ out, const int ldo, const int oH, const int oW, const int N, const int M) {
-    int t;
-    int sizeO = oH * oW;
-    const int OHP = oH / 4 * 4;
-    const int OWP = oW / 4 * 4;
+static void out_transform_4x3(const float* __restrict__ d, const long K, const long ntiles, float* __restrict__ out, const long ldo, const long oH, const long oW, const long N, const long M) {
+    long t;
+    long sizeO = oH * oW;
+    const long OHP = oH / 4 * 4;
+    const long OWP = oW / 4 * 4;
 
     #pragma omp parallel for private(t)
     for (t = 0; t < N * K; ++t) {
-        int i, j;
+        long i, j;
 
-        const int t1 = t / (K * M);
-        const int t2 = (t % (K * M)) / M;
-        const int t3 = t % M;
+        const long t1 = t / (K * M);
+        const long t2 = (t % (K * M)) / M;
+        const long t3 = t % M;
 
         float *data = out + (t1 * M * K + t3 * K + t2) * sizeO;
-        int tile_offset = t * ntiles;
-        const int num16t = oW / 64 * 64;
+        long tile_offset = t * ntiles;
+        const long num16t = oW / 64 * 64;
         float temp[4 * 64]__attribute__((aligned(64)));
         for (i = 0; i < OHP; i += 4) {
             for (j = 0; j < num16t; j += 64) {
@@ -1240,16 +1240,15 @@ void winconv_4x3(float* __restrict__ image, const int irows, const int icols,
                  const int C, float* __restrict__ filter, const int K, const int batch,
                  float* __restrict__ out, float *__restrict__ U, float *__restrict__ V,
                  float *__restrict__ M, int M4x3) {
-    const int outHeight = irows - 2;
-    const int outWidth = icols - 2;
-    const int sizeI = irows * icols;
-    const int tiles = (outHeight) * 0.25 * (outWidth) * 0.25;
-    const int padHeight = (outHeight + 3) / 4 * 4;
-    const int padWidth = (outWidth + 63) / 64 * 64;
-    const int padTiles = padHeight / 4 * padWidth / 4;
-    const int b_batchSize = 64;
+    const long outHeight = irows - 2;
+    const long outWidth = icols - 2;
+    const long sizeI = irows * icols;
+    const long padHeight = (outHeight + 3) / 4 * 4;
+    const long padWidth = (outWidth + 63) / 64 * 64;
+    const long padTiles = padHeight / 4 * padWidth / 4;
+    const long b_batchSize = 64;
 
-    int merge = M4x3;
+    long merge = M4x3;
 
     filter_transform_4x3(filter, C, K, U);
 
